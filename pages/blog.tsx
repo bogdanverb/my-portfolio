@@ -1,7 +1,6 @@
 import Layout from '../components/Layout'
 import Link from 'next/link'
 import { GetStaticProps } from 'next'
-import { getMarkdownList, MarkdownMeta } from '../src/utils/markdown'
 import FadeIn from '../components/FadeIn'
 
 type BlogProps = {
