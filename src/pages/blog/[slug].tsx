@@ -1,6 +1,5 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
-import { getPostBySlug, getAllPosts } from '../../utils/markdown';
 import Layout from '../../components/Layout';
 
 const BlogPost = ({ post }) => {
