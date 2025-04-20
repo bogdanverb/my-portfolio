@@ -1,15 +1,21 @@
 import { GetStaticPaths, GetStaticProps } from 'next'
 import Layout from '../../components/Layout'
 import FadeIn from '../../components/FadeIn'
-import { getMarkdownList, getMarkdownBySlug, MarkdownMeta } from '../../src/utils/markdown'
+
+// Типові дані для проекту
+const dummyData = {
+  title: 'Example Project',
+  description: 'This is a sample project description. Replace with real data.',
+  content: '<p>This is some sample content for the project page. You can add HTML here.</p>',
+}
 
 type ProjectProps = {
-  meta: MarkdownMeta
+  meta: { title: string; description: string }
   content: string
 }
 
 export default function ProjectPage({ meta, content }: ProjectProps) {
-  if (!meta) return <Layout><div>Проект не найден</div></Layout>
+  if (!meta) return <Layout><div>Проект не знайдений</div></Layout>
   return (
     <Layout>
       <FadeIn>
@@ -24,21 +30,25 @@ export default function ProjectPage({ meta, content }: ProjectProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const projects = getMarkdownList('content/projects')
+  // Для цього прикладу просто додаємо один статичний шлях
+  const paths = [{ params: { slug: 'example-project' } }]
   return {
-    paths: projects.map((p) => ({ params: { slug: p.slug } })),
+    paths,
     fallback: 'blocking',
   }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const slug = params?.slug as string
-  const data = getMarkdownBySlug('content/projects', slug)
-  if (!data) return { notFound: true }
+  
+  // Якщо слуг не співпадає з example-project, то буде повернено notFound
+  if (slug !== 'example-project') return { notFound: true }
+
+  // Повертання фіксованих даних
   return {
     props: {
-      meta: data.meta,
-      content: data.content,
+      meta: { title: dummyData.title, description: dummyData.description },
+      content: dummyData.content,
     },
   }
 }
