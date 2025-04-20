@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { Analytics } from "@vercel/analytics/react"
 
 // Альтернативные современные иконки для ThemeToggle (минимализм, tech)
 function CustomThemeToggle({ theme, toggle }: { theme: string; toggle: () => void }) {
@@ -456,6 +457,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <a href="https://nextjs.org" className="text-primary hover:underline font-semibold transition-all duration-200 hover:drop-shadow-glow">Next.js</a>
         </p>
       </footer>
+      <Analytics />
     </div>
   )
 }
