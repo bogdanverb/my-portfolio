@@ -4,7 +4,11 @@ import { GetStaticProps } from 'next'
 import FadeIn from '../components/FadeIn'
 
 type BlogProps = {
-  posts: MarkdownMeta[]
+  posts: {
+    title: string
+    date: string
+    slug: string
+  }[]
 }
 
 export default function Blog({ posts }: BlogProps) {
@@ -31,7 +35,20 @@ export default function Blog({ posts }: BlogProps) {
   )
 }
 
+// Поки що просто "захардкожені" пости
 export const getStaticProps: GetStaticProps = async () => {
-  const posts = getMarkdownList('content/blog')
+  const posts = [
+    {
+      title: 'Сертифікат по React',
+      date: '2024-12-01',
+      slug: 'react-certificate',
+    },
+    {
+      title: 'Сертифікат по TypeScript',
+      date: '2024-11-15',
+      slug: 'typescript-certificate',
+    },
+  ]
+
   return { props: { posts } }
 }
