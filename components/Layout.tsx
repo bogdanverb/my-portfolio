@@ -1,6 +1,6 @@
+import React, { useEffect, useRef, useState } from 'react'
 export {}
 
-import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Analytics } from "@vercel/analytics/react"
