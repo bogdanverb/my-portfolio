@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-export {}
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
