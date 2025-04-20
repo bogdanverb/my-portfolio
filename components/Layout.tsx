@@ -123,7 +123,7 @@ function NetworkSVG() {
 
   return (
     <svg
-      className="absolute left-0 top-0 w-full h-full pointer-events-none select-none"
+      className="absolute left-0 top-0 w-full pointer-events-none select-none"
       style={{ minHeight: '100vh', zIndex: 0 }}
       width="100%"
       height="100%"
@@ -190,9 +190,28 @@ function NetworkSVG() {
   )
 }
 
-function Navbar({ showNavbar, theme, toggleTheme }: { showNavbar: boolean; theme: string; toggleTheme: () => void }) {
-  const [open, setOpen] = useState(false)
-  const handleNavClick = () => setOpen(false)
+function Navbar({
+  showNavbar,
+  theme,
+  toggleTheme,
+  mobileOpen,
+  setMobileOpen,
+}: {
+  showNavbar: boolean
+  theme: string
+  toggleTheme: () => void
+  mobileOpen: boolean
+  setMobileOpen: (open: boolean) => void
+}) {
+  const navLinks = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
+    { href: "/skills", label: "Skills" },
+    { href: "/projects", label: "Projects" },
+    { href: "/blog", label: "Blog" },
+    { href: "/resume", label: "Resume" },
+    { href: "/contact", label: "Contact" },
+  ];
 
   return (
     <header
@@ -201,69 +220,37 @@ function Navbar({ showNavbar, theme, toggleTheme }: { showNavbar: boolean; theme
       }`}
       style={{ willChange: 'transform' }}
     >
-      {/* Desktop nav */}
+      {/* Desktop меню */}
       <nav className="hidden md:flex gap-8 flex-1 text-lg font-semibold">
-        <Link href="/" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>Home</Link>
-        <Link href="/about" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>About</Link>
-        <Link href="/skills" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>Skills</Link>
-        <Link href="/projects" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>Projects</Link>
-        <Link href="/blog" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>Blog</Link>
-        <Link href="/resume" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>Resume</Link>
-        <Link href="/contact" className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow" onClick={handleNavClick}>Contact</Link>
+        {navLinks.map(link => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="hover:text-primary transition-all duration-200 hover:drop-shadow-glow"
+            onClick={() => {}}
+          >
+            {link.label}
+          </Link>
+        ))}
       </nav>
-      {/* Burger button (mobile only) */}
-      <div className="flex md:hidden flex-1 items-center justify-end">
-        <button
-          aria-label="Open menu"
-          className="p-3 rounded-full bg-primary text-white shadow-lg"
-          onClick={() => setOpen(true)}
-        >
-          <svg width="28" height="28" fill="none" viewBox="0 0 28 28">
-            <rect x="5" y="8" width="18" height="3" rx="1.5" fill="currentColor" />
-            <rect x="5" y="13" width="18" height="3" rx="1.5" fill="currentColor" />
-            <rect x="5" y="18" width="18" height="3" rx="1.5" fill="currentColor" />
-          </svg>
-        </button>
-      </div>
-      {/* Theme toggle (desktop only) */}
       <div className="hidden md:flex items-center gap-2 ml-6">
         <CustomThemeToggle theme={theme} toggle={toggleTheme} />
       </div>
-      {/* Mobile menu */}
-      {open && (
-        <div className="fixed inset-0 z-50 bg-black flex md:hidden" onClick={() => setOpen(false)}>
-          <nav
-            className="ml-auto w-72 h-full shadow-2xl flex flex-col gap-6 p-8 text-xl font-semibold rounded-l-2xl border-l border-gray-200 dark:border-gray-800 z-50 relative"
-            style={{
-              backgroundColor: theme === 'dark' ? '#18181b' : '#fff',
-              boxShadow: '0 8px 32px 0 rgba(99,102,241,0.18), 0 1.5px 8px 0 #FF573340',
-              isolation: 'isolate',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              aria-label="Close menu"
-              className="mb-8 ml-auto p-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
-              onClick={() => setOpen(false)}
-            >
-              <svg width="28" height="28" fill="none" viewBox="0 0 24 24">
-                <line x1="6" y1="6" x2="18" y2="18" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
-                <line x1="18" y1="6" x2="6" y2="18" stroke="#FF5733" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
-            <Link href="/" className="hover:text-primary" onClick={handleNavClick}>Home</Link>
-            <Link href="/about" className="hover:text-primary" onClick={handleNavClick}>About</Link>
-            <Link href="/skills" className="hover:text-primary" onClick={handleNavClick}>Skills</Link>
-            <Link href="/projects" className="hover:text-primary" onClick={handleNavClick}>Projects</Link>
-            <Link href="/blog" className="hover:text-primary" onClick={handleNavClick}>Blog</Link>
-            <Link href="/resume" className="hover:text-primary" onClick={handleNavClick}>Resume</Link>
-            <Link href="/contact" className="hover:text-primary" onClick={handleNavClick}>Contact</Link>
-            <div className="mt-10 flex justify-center">
-              <CustomThemeToggle theme={theme} toggle={toggleTheme} />
-            </div>
-          </nav>
-        </div>
-      )}
+      {/* Мобильный бургер */}
+      <div className="flex md:hidden flex-1 justify-end items-center">
+        <button
+          aria-label="Открыть меню"
+          className={`p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg transition-all duration-200 focus:outline-none ${
+            mobileOpen ? 'scale-90' : 'scale-100'
+          }`}
+          onClick={() => setMobileOpen(true)}
+        >
+          {/* Анимированный бургер */}
+          <span className="block w-7 h-1 bg-primary rounded transition-all duration-300 mb-1" style={{ transform: mobileOpen ? 'rotate(45deg) translateY(8px)' : 'none' }} />
+          <span className={`block w-7 h-1 bg-primary rounded transition-all duration-300 mb-1 ${mobileOpen ? 'opacity-0' : ''}`} />
+          <span className="block w-7 h-1 bg-primary rounded transition-all duration-300" style={{ transform: mobileOpen ? 'rotate(-45deg) translateY(-8px)' : 'none' }} />
+        </button>
+      </div>
     </header>
   )
 }
@@ -271,6 +258,7 @@ function Navbar({ showNavbar, theme, toggleTheme }: { showNavbar: boolean; theme
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [showNavbar, setShowNavbar] = useState(true)
   const [showScrollTop, setShowScrollTop] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const lastScroll = useRef(0)
   const userScrolled = useRef(false)
 
@@ -356,13 +344,80 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-visible">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden">
       {/* SVG-сеть на всю страницу, скроллится вместе с контентом */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
+      <div className="absolute inset-0 w-full pointer-events-none z-0">
         <NetworkSVG />
       </div>
       {/* Navbar (адаптивный) */}
-      <Navbar showNavbar={showNavbar} theme={theme} toggleTheme={toggleTheme} />
+      <Navbar
+        showNavbar={showNavbar}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
+      {/* Overlay и меню на самом верхнем уровне */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-50"
+          aria-hidden="true"
+          tabIndex={-1}
+          onClick={() => setMobileOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/40 transition-opacity duration-300" />
+          <nav
+            className="absolute top-0 right-0 h-screen w-[320px] max-w-full flex flex-col p-8 gap-0 animate-slide-in bg-white dark:bg-gray-900 shadow-2xl rounded-l-2xl border-l border-gray-200 dark:border-gray-800"
+            style={{
+              opacity: 1,
+              zIndex: 9999,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              aria-label="Закрыть меню"
+              className="self-end mb-6 p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow transition-all duration-200 hover:scale-110 flex items-center justify-center"
+              onClick={() => setMobileOpen(false)}
+            >
+              {/* SVG-крестик */}
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <line x1="6" y1="6" x2="18" y2="18" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/>
+                <line x1="18" y1="6" x2="6" y2="18" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+            <div className="flex flex-col gap-0">
+              {[
+                { href: "/", label: "Home" },
+                { href: "/about", label: "About" },
+                { href: "/skills", label: "Skills" },
+                { href: "/projects", label: "Projects" },
+                { href: "/blog", label: "Blog" },
+                { href: "/resume", label: "Resume" },
+                { href: "/contact", label: "Contact" },
+              ].map((link, idx, arr) => (
+                <React.Fragment key={link.href}>
+                  <a
+                    href={link.href}
+                    className="text-lg font-semibold py-3 px-2 rounded transition-all duration-200 hover:bg-primary/10 hover:text-primary flex items-center group"
+                    style={{
+                      animation: `fadeInSection 0.4s cubic-bezier(0.4,0,0.2,1) ${0.08 * idx + 0.1}s both`
+                    }}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                  {idx < arr.length - 1 && (
+                    <div className="border-b border-gray-200 dark:border-gray-700 mx-2" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="mt-8">
+              <CustomThemeToggle theme={theme} toggle={toggleTheme} />
+            </div>
+          </nav>
+        </div>
+      )}
       {/* Кнопка "вверх" */}
       <button
         aria-label="Scroll to top"
@@ -391,9 +446,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </main>
       {/* Футер без анимации */}
       <footer className="py-10 px-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-300 text-center mt-12 shadow-inner rounded-t-2xl relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute left-1/2 top-0 -translate-x-1/2 w-2/3 h-24 bg-gradient-to-r from-primary/30 via-accent/20 to-secondary/10 blur-2xl opacity-40 animate-pulse" />
-        </div>
+        <div className="absolute inset-0 pointer-events-none"></div>
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 w-2/3 h-24 bg-gradient-to-r from-primary/30 via-accent/20 to-secondary/10 blur-2xl opacity-40 animate-pulse" />
         <p className="mb-2 text-lg font-medium relative z-10">
           © {new Date().getFullYear()} <span className="text-primary font-bold">Bohdan Verbovyi</span>. All rights reserved.
         </p>

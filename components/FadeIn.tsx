@@ -5,5 +5,5 @@ type FadeInProps = {
 }
 
 export default function FadeIn({ children }: FadeInProps) {
-  return <>{children}</>
+  return <div className="fade-in-section">{children}</div>
 }
