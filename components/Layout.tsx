@@ -255,7 +255,7 @@ function Navbar({
   )
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+function Layout({ children }: { children: React.ReactNode }) {
   const [showNavbar, setShowNavbar] = useState(true)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -459,3 +459,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
+
+export default Layout
