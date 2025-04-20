@@ -1,14 +1,30 @@
 import Layout from '../components/Layout'
-import { GetStaticProps } from 'next'
-import { getMarkdownList, MarkdownMeta } from '../src/utils/markdown'
 import FadeIn from '../components/FadeIn'
 import ProjectCard from '../components/ProjectCard'
 
-type ProjectsProps = {
-  projects: MarkdownMeta[]
+type Project = {
+  slug: string
+  title: string
+  description: string
+  cover?: string
 }
 
-export default function Projects({ projects }: ProjectsProps) {
+const projects: Project[] = [
+  {
+    slug: 'react-certificate',
+    title: 'React Certificate',
+    description: 'Проєкт про React-сертифікат, зроблений під час навчання.',
+    cover: '/images/react-cert.png',
+  },
+  {
+    slug: 'typescript-certificate',
+    title: 'TypeScript Certificate',
+    description: 'Проєкт з TypeScript, як результат глибшого вивчення мови.',
+    cover: '/images/ts-cert.png',
+  },
+]
+
+export default function Projects() {
   return (
     <Layout>
       <FadeIn>
@@ -21,7 +37,7 @@ export default function Projects({ projects }: ProjectsProps) {
               <ProjectCard
                 key={proj.slug}
                 title={proj.title}
-                description={proj.description || ''}
+                description={proj.description}
                 slug={proj.slug}
                 cover={proj.cover}
               />
@@ -31,9 +47,4 @@ export default function Projects({ projects }: ProjectsProps) {
       </FadeIn>
     </Layout>
   )
-}
-
-export const getStaticProps: GetStaticProps = async () => {
-  const projects = getMarkdownList('content/projects')
-  return { props: { projects } }
 }
