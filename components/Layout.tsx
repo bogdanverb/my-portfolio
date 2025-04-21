@@ -13,39 +13,41 @@ function CustomThemeToggle({ theme, toggle }: { theme: string; toggle: () => voi
   useEffect(() => { setMounted(true) }, [])
 
   return (
-    <button
-      aria-label="Toggle theme"
-      onClick={toggle}
-      className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-md hover:scale-110 transition-all duration-200"
-    >
-      {mounted && theme === 'dark' && (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 1 0 9.79 9.79Z"
-            stroke="#6366f1"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        </svg>
-      )}
-      {mounted && theme === 'light' && (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="5" stroke="#FF5733" strokeWidth="2" />
-          <g stroke="#6366f1" strokeWidth="2" strokeLinecap="round">
-            <line x1="12" y1="1" x2="12" y2="3" />
-            <line x1="12" y1="21" x2="12" y2="23" />
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-            <line x1="1" y1="12" x2="3" y2="12" />
-            <line x1="21" y1="12" x2="23" y2="12" />
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-          </g>
-        </svg>
-      )}
-    </button>
+    <div className="flex items-center gap-2">
+      <button
+        aria-label="Toggle theme"
+        onClick={toggle}
+        className="w-10 h-10 flex items-center justify-center rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-md hover:scale-110 transition-all duration-200"
+      >
+        {mounted && theme === 'dark' && (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 1 0 9.79 9.79Z"
+              stroke="#6366f1"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          </svg>
+        )}
+        {mounted && theme === 'light' && (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="5" stroke="#FF5733" strokeWidth="2" />
+            <g stroke="#6366f1" strokeWidth="2" strokeLinecap="round">
+              <line x1="12" y1="1" x2="12" y2="3" />
+              <line x1="12" y1="21" x2="12" y2="23" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+              <line x1="1" y1="12" x2="3" y2="12" />
+              <line x1="21" y1="12" x2="23" y2="12" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+            </g>
+          </svg>
+        )}
+      </button>
+    </div>
   )
 }
 
@@ -65,20 +67,27 @@ function useWindowSize() {
 
 // Живая SVG-сеть с useMemo для оптимизации
 function NetworkSVG({ width, height }: { width: number; height: number }) {
-  // Адаптируем сетку для мобильных устройств
+  // Адаптируем сетку для мобильных устройств с лучшими пропорциями
   const isMobile = width < 768;
-  const cols = isMobile ? 4 : 6;
-  const rows = 10;
+
+  // Увеличиваем количество рядов на мобильных для лучшей пропорции
+  const cols = isMobile ? 5 : 6;
+  const rows = isMobile ? 15 : 10;
+
+  // Шаг между точками, учитывающий аспект для мобильных
   const xStep = width / (cols - 1);
   const yStep = height / (rows - 1);
+
+  // Уменьшаем амплитуду смещений на мобильных
+  const amplitudeFactor = isMobile ? 0.7 : 1;
 
   // Мемоизация точек и линий
   const { points, lines } = React.useMemo(() => {
     const points: { x: number; y: number; key: string }[] = []
     for (let i = 0; i < cols; i++) {
       for (let j = 0; j < rows; j++) {
-        const rx = i === 0 || i === cols - 1 ? 0 : Math.sin(j + i) * 18
-        const ry = j === 0 || j === rows - 1 ? 0 : Math.cos(i + j) * 18
+        const rx = i === 0 || i === cols - 1 ? 0 : Math.sin(j + i) * 18 * amplitudeFactor
+        const ry = j === 0 || j === rows - 1 ? 0 : Math.cos(i + j) * 18 * amplitudeFactor
         points.push({
           x: Math.round(i * xStep + rx),
           y: Math.round(j * yStep + ry),
@@ -137,7 +146,7 @@ function NetworkSVG({ width, height }: { width: number; height: number }) {
       }
     }
     return { points, lines }
-  }, [cols, rows, width, height, xStep, yStep])
+  }, [cols, rows, width, height, xStep, yStep, amplitudeFactor])
 
   return (
     <svg
@@ -238,8 +247,22 @@ function Navbar({
       } ${mobileOpen ? 'md:translate-y-0 md:opacity-100 -translate-y-full opacity-0' : ''}`}
       style={{ willChange: 'transform, opacity' }}
     >
+      {/* Более стильный логотип */}
+      <div className="flex items-center">
+        <Link 
+          href="/" 
+          className="text-xl md:text-2xl font-black tracking-tighter hover:scale-105 transition-transform duration-300"
+        >
+          <span className="text-primary">Script</span>
+          <span className="text-accent relative">
+            XX
+            <span className="absolute -top-1 right-0 text-xs text-primary opacity-70">™</span>
+          </span>
+        </Link>
+      </div>
+
       {/* Desktop меню */}
-      <nav className="hidden md:flex gap-8 flex-1 text-lg font-semibold">
+      <nav className="hidden md:flex gap-8 flex-1 text-lg font-semibold justify-end">
         {navLinks.map(link => (
           <Link
             key={link.href}
@@ -470,7 +493,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </button>
           
-          <div className="flex flex-col gap-0">
+          <div className="flex flex-col gap-0 mt-6">
             {[
               { href: "/", label: "Home" },
               { href: "/about", label: "About" },
@@ -497,7 +520,9 @@ function Layout({ children }: { children: React.ReactNode }) {
               </React.Fragment>
             ))}
           </div>
-          <div className="mt-8">
+          
+          <div className="mt-8 flex flex-col items-center gap-2">
+            <span className="text-sm font-medium">Switch theme</span>
             <CustomThemeToggle theme={theme ?? 'light'} toggle={toggleTheme} />
           </div>
         </nav>
