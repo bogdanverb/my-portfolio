@@ -315,6 +315,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const lastScroll = useRef(0)
   const userScrolled = useRef(false)
   const contentRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null); // Добавляем ссылку на футер
   const [contentHeight, setContentHeight] = useState(3000)
 
   const { theme, setTheme } = useTheme()
@@ -351,13 +352,14 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Измерение высоты контента
+  // Измерение высоты контента - исправим логику
   useEffect(() => {
     const updateContentHeight = () => {
-      if (contentRef.current) {
-        // Берём максимум из реальной высоты и 3000px
-        const newHeight = Math.max(contentRef.current.scrollHeight, 3000);
-        setContentHeight(newHeight);
+      if (contentRef.current && footerRef.current) {
+        // Вычисляем высоту страницы до футера, а не всего контента
+        const footerPosition = footerRef.current.offsetTop;
+        // Устанавливаем высоту SVG до футера, а не превышая его
+        setContentHeight(footerPosition);
       }
     };
     
@@ -366,12 +368,14 @@ function Layout({ children }: { children: React.ReactNode }) {
     // Перерассчитываем при изменении размера окна
     window.addEventListener('resize', updateContentHeight);
     
-    // И через небольшую задержку для уверенности, что всё загрузилось
-    const timer = setTimeout(updateContentHeight, 500);
+    // И через задержки для гарантии, что все элементы загружены
+    const timer1 = setTimeout(updateContentHeight, 500);
+    const timer2 = setTimeout(updateContentHeight, 1000); // Двойная проверка для надежности
     
     return () => {
       window.removeEventListener('resize', updateContentHeight);
-      clearTimeout(timer);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
     };
   }, [children]);
 
@@ -440,8 +444,8 @@ function Layout({ children }: { children: React.ReactNode }) {
       ref={contentRef}
       className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden"
     >
-      {/* SVG-сеть на всю страницу, скроллится вместе с контентом */}
-      <div className="absolute inset-0 w-full pointer-events-none z-0">
+      {/* SVG-сеть на всю страницу, скроллится вместе с контентом до футера */}
+      <div className="absolute inset-0 w-full pointer-events-none z-0 overflow-hidden">
         <NetworkSVG width={width} height={contentHeight} />
       </div>
       {/* Navbar (адаптивный) */}
@@ -550,11 +554,14 @@ function Layout({ children }: { children: React.ReactNode }) {
         </svg>
       </button>
       {/* Контент с плавной анимацией появления секций */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-8 relative z-10">
         <div className="fade-in-section">{children}</div>
       </main>
-      {/* Футер без анимации */}
-      <footer className="py-10 px-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-300 text-center mt-12 shadow-inner rounded-t-2xl relative overflow-hidden">
+      {/* Футер без анимации - добавляем ref и z-index */}
+      <footer 
+        ref={footerRef}
+        className="py-10 px-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-300 text-center mt-12 shadow-inner rounded-t-2xl relative z-20 overflow-hidden"
+      >
         <div className="absolute inset-0 pointer-events-none"></div>
         <div className="absolute left-1/2 top-0 -translate-x-1/2 w-2/3 h-24 bg-gradient-to-r from-primary/30 via-accent/20 to-secondary/10 blur-2xl opacity-40 animate-pulse" />
         <p className="mb-2 text-lg font-medium relative z-10">
