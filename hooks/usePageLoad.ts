@@ -11,39 +11,61 @@ export default function usePageLoad(minimumLoadingTime = 1000) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Переменная для хранения времени начала загрузки
+    let startTime = Date.now();
+
     // Обработчики событий роутера
-    const handleStart = (url: string) => {
-      // Если это не первая загрузка (проверка через !document.readyState === 'complete')
-      if (document.readyState === 'complete') {
-        setLoading(true);
-      }
+    const handleStart = () => {
+      // Если это новый переход, запускаем загрузку и сбрасываем таймер
+      startTime = Date.now();
+      setLoading(true);
     };
 
-    const handleComplete = (url: string) => {
-      // Добавляем минимальное время для прелоадера
-      const startTime = Date.now();
+    const handleComplete = () => {
+      // Вычисляем, сколько времени прошло с начала загрузки
       const timeElapsed = Date.now() - startTime;
       
+      // Если прошло меньше минимального времени, показываем загрузку еще какое-то время
       if (timeElapsed < minimumLoadingTime) {
         setTimeout(() => {
           setLoading(false);
         }, minimumLoadingTime - timeElapsed);
       } else {
+        // Иначе завершаем загрузку сразу
         setLoading(false);
       }
     };
 
     // При первой загрузке страницы
-    if (document.readyState === 'complete') {
-      const startTime = Date.now();
-      const timeElapsed = Date.now() - startTime;
-      
-      if (timeElapsed < minimumLoadingTime) {
-        setTimeout(() => {
+    if (typeof window !== 'undefined') {
+      if (document.readyState === 'complete') {
+        const timeElapsed = Date.now() - startTime;
+        
+        if (timeElapsed < minimumLoadingTime) {
+          setTimeout(() => {
+            setLoading(false);
+          }, minimumLoadingTime - timeElapsed);
+        } else {
           setLoading(false);
-        }, minimumLoadingTime - timeElapsed);
+        }
       } else {
-        setLoading(false);
+        // Если страница еще не полностью загружена, добавляем обработчик события загрузки
+        const handleLoad = () => {
+          const timeElapsed = Date.now() - startTime;
+          
+          if (timeElapsed < minimumLoadingTime) {
+            setTimeout(() => {
+              setLoading(false);
+            }, minimumLoadingTime - timeElapsed);
+          } else {
+            setLoading(false);
+          }
+        };
+        
+        window.addEventListener('load', handleLoad);
+        return () => {
+          window.removeEventListener('load', handleLoad);
+        };
       }
     }
 

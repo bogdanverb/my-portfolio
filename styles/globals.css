@@ -1,6 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-primary: #6366f1;
+  --color-primary-dark: #4f46e5;
+  --color-accent: #FF5733;
+  --color-text: #0f172a;
+  --color-text-secondary: #4b5563;
+  --color-background: #f9fafb;
+  --color-background-secondary: #f3f4f6;
+  --color-border: #e5e7eb;
+  --font-family-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-family-mono: 'Roboto Mono', monospace;
+}
+
+.dark {
+  --color-primary: #818cf8;
+  --color-primary-dark: #6366f1;
+  --color-accent: #FF6B4B;
+  --color-text: #f3f4f6;
+  --color-text-secondary: #9ca3af;
+  --color-background: #0a0f1c;
+  --color-background-secondary: #1e293b;
+  --color-border: #334155;
+}
 
 /* your custom styles */
 html {
@@ -8,18 +34,37 @@ html {
 }
 
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  background-color: #f9fafb;
-  color: #0f172a;
+  font-family: var(--font-family-sans);
+  background-color: var(--color-background);
+  color: var(--color-text);
   margin: 0; /* Убедитесь, что нет отступов */
   padding: 0;
   min-height: 100vh;
   transition: background 0.3s, color 0.3s;
 }
 
-.dark body {
-  background-color: #0a0f1c;
-  color: #f3f4f6;
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  letter-spacing: -0.025em;
+}
+
+h2 {
+  font-size: 2rem;
+  letter-spacing: -0.025em;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+code, pre {
+  font-family: var(--font-family-mono);
 }
 
 /* Анимации появления */
@@ -56,25 +101,25 @@ body {
 
 /* Улучшение ссылок */
 a {
-  color: #6366f1; /* primary */
+  color: var(--color-primary); /* primary */
   text-decoration: none;
   transition: color 0.2s, transform 0.2s;
 }
 
 a:hover {
-  color: #FF5733; /* accent */
+  color: var(--color-accent); /* accent */
   transform: translateY(-2px);
 }
 
 /* Glow эффект для ссылок и кнопок */
 .drop-shadow-glow {
-  filter: drop-shadow(0 0 8px #6366f1) drop-shadow(0 0 16px #FF5733);
+  filter: drop-shadow(0 0 8px var(--color-primary)) drop-shadow(0 0 16px var(--color-accent));
 }
 
 /* Анимация пульсации */
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 #6366f1; }
-  50% { box-shadow: 0 0 24px 8px #FF5733; }
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-primary); }
+  50% { box-shadow: 0 0 24px 8px var(--color-accent); }
 }
 .animate-pulse-glow {
   animation: pulseGlow 2s infinite;
@@ -82,7 +127,7 @@ a:hover {
 
 /* Улучшение кнопок */
 button {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family-sans);
   font-weight: 600;
   border-radius: 0.5rem;
   transition: background-color 0.3s, transform 0.2s;
@@ -94,15 +139,17 @@ button:hover {
 
 /* Улучшение карточек */
 .card {
-  background: #ffffff;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
   border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s, transform 0.2s;
   animation: cardFadeIn 0.7s cubic-bezier(0.4,0,0.2,1) both;
 }
 
 .card:hover {
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-4px);
 }
 
@@ -165,3 +212,69 @@ button:hover {
   height: 100%;
 }
 */
+
+/* Мобильные адаптации */
+@media (max-width: 768px) {
+  .container {
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+  }
+  
+  h1, .h1 {
+    font-size: 2rem !important; /* Уменьшаем заголовки для мобильных */
+  }
+  
+  h2, .h2 {
+    font-size: 1.75rem !important;
+  }
+  
+  h3, .h3 {
+    font-size: 1.5rem !important;
+  }
+  
+  .py-section {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+  }
+  
+  /* Улучшаем читаемость текста на мобильных */
+  body {
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+  }
+  
+  p {
+    font-size: 1rem !important;
+    line-height: 1.6 !important;
+  }
+  
+  /* Увеличиваем область касания для кнопок */
+  button, .btn, a.btn {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+  }
+  
+  /* Больше пространства для касания на мобильных */
+  .touch-target {
+    padding: 0.75rem;
+    min-height: 44px;
+  }
+  
+  /* Увеличим отступы внутри карточек на мобильных */
+  .card {
+    padding: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+/* Фиксы для очень маленьких экранов */
+@media (max-width: 360px) {
+  .text-xs {
+    font-size: 0.65rem !important;
+  }
+  
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
