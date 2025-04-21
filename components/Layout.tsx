@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Analytics } from "@vercel/analytics/react"
+import { useTheme } from 'next-themes'
 
 // Альтернативные современные иконки для ThemeToggle (минимализм, tech)
 function CustomThemeToggle({ theme, toggle }: { theme: string; toggle: () => void }) {
@@ -264,15 +265,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const lastScroll = useRef(0)
   const userScrolled = useRef(false)
 
-  // Инициализация темы по классу html (фикс бага с несоответствием темы)
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      if (document.documentElement.classList.contains('dark')) return 'dark'
-      return 'light'
-    }
-    // SSR fallback
-    return 'light'
-  })
+  const { theme, setTheme } = useTheme()
 
   useEffect(() => {
     const checkScroll = () => {
@@ -328,17 +321,6 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const html = document.documentElement
-      if (theme === 'dark') {
-        html.classList.add('dark')
-      } else {
-        html.classList.remove('dark')
-      }
-    }
-  }, [theme])
-
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
   const handleScrollTop = () => {
@@ -354,7 +336,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       {/* Navbar (адаптивный) */}
       <Navbar
         showNavbar={showNavbar}
-        theme={theme}
+        theme={theme ?? 'light'}
         toggleTheme={toggleTheme}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
@@ -415,7 +397,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               ))}
             </div>
             <div className="mt-8">
-              <CustomThemeToggle theme={theme} toggle={toggleTheme} />
+              <CustomThemeToggle theme={theme ?? 'light'} toggle={toggleTheme} />
             </div>
           </nav>
         </div>
