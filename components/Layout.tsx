@@ -138,7 +138,11 @@ function NetworkSVG({ width, height }: { width: number; height: number }) {
 
   // Увеличиваем количество рядов на мобильных для лучшей пропорции
   const cols = isMobile ? 5 : 6;
-  const rows = isMobile ? 15 : 10;
+  
+  // Пропорциональная адаптация количества рядов с учётом соотношения ширины и высоты
+  // Минимум 10 рядов, но масштабируем пропорционально высоте контейнера
+  const aspectRatio = width / height;
+  const rows = Math.max(isMobile ? 15 : 10, Math.floor(height / (width / cols) * (isMobile ? 0.8 : 0.5)));
 
   // Шаг между точками, учитывающий аспект для мобильных
   const xStep = width / (cols - 1);
@@ -383,10 +387,16 @@ function Layout({ children }: { children: React.ReactNode }) {
   const contentRef = useRef<HTMLDivElement>(null)
   const footerRef = useRef<HTMLDivElement>(null); // Добавляем ссылку на футер
   const [contentHeight, setContentHeight] = useState(3000)
+  const [isBrowser, setIsBrowser] = useState(false); // Флаг для проверки, находимся ли мы в браузере
 
   const { theme, setTheme } = useTheme()
   const { width, height } = useWindowSize()
   const loading = usePageLoad(1000); // Используем хук с минимальной задержкой в 1 секунду
+
+  // Устанавливаем флаг isBrowser после монтирования компонента
+  useEffect(() => {
+    setIsBrowser(true);
+  }, []);
 
   // Обработчик для плавного открытия/закрытия меню
   const handleToggleMenu = (open: boolean) => {
@@ -423,28 +433,37 @@ function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const updateContentHeight = () => {
       if (contentRef.current && footerRef.current) {
-        // Вычисляем высоту страницы до футера, а не всего контента
+        // Получаем высоту страницы до футера
         const footerPosition = footerRef.current.offsetTop;
-        // Устанавливаем высоту SVG до футера, а не превышая его
-        setContentHeight(footerPosition);
+        
+        // Минимальная высота сети - высота окна + небольшой запас для прокрутки
+        const minHeight = isBrowser ? window.innerHeight * 1.2 : 3000;
+        
+        // Выбираем большее значение между реальной высотой до футера и минимальной высотой
+        const calculatedHeight = Math.max(footerPosition, minHeight);
+        
+        // Устанавливаем высоту SVG
+        setContentHeight(calculatedHeight);
       }
     };
     
-    updateContentHeight();
-    
-    // Перерассчитываем при изменении размера окна
-    window.addEventListener('resize', updateContentHeight);
-    
-    // И через задержки для гарантии, что все элементы загружены
-    const timer1 = setTimeout(updateContentHeight, 500);
-    const timer2 = setTimeout(updateContentHeight, 1000); // Двойная проверка для надежности
-    
-    return () => {
-      window.removeEventListener('resize', updateContentHeight);
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, [children]);
+    if (isBrowser) {
+      updateContentHeight();
+      
+      // Перерассчитываем при изменении размера окна
+      window.addEventListener('resize', updateContentHeight);
+      
+      // Двойная проверка для надежности с разными задержками
+      const timer1 = setTimeout(updateContentHeight, 500);
+      const timer2 = setTimeout(updateContentHeight, 1000);
+      
+      return () => {
+        window.removeEventListener('resize', updateContentHeight);
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [children, isBrowser]); // Добавляем isBrowser в зависимости
 
   useEffect(() => {
     const checkScroll = () => {
@@ -502,8 +521,10 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Блокируем/разблокируем скролл в зависимости от состояния загрузки
-    document.body.style.overflow = loading ? 'hidden' : '';
-  }, [loading]);
+    if (isBrowser) {
+      document.body.style.overflow = loading ? 'hidden' : '';
+    }
+  }, [loading, isBrowser]);
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
@@ -526,9 +547,15 @@ function Layout({ children }: { children: React.ReactNode }) {
           willChange: 'opacity'
         }}
       >
-        {/* SVG-сеть на всю страницу */}
-        <div className="absolute inset-0 w-full pointer-events-none z-0 overflow-hidden">
-          <NetworkSVG width={width} height={contentHeight} />
+        {/* SVG-сеть - исправляем проверку для предотвращения ошибок SSR */}
+        <div 
+          className="absolute inset-0 w-full pointer-events-none z-0 overflow-hidden"
+          style={{ minHeight: '100vh' }}
+        >
+          {/* Проверяем, что мы в браузере и компонент загружен */}
+          {isBrowser && contentHeight > 0 && (
+            <NetworkSVG width={width} height={contentHeight} />
+          )}
         </div>
         
         {/* Navbar */}
