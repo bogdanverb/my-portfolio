@@ -6,6 +6,72 @@ import { useTheme } from 'next-themes'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
+// Добавляем импорт нашего хука
+import usePageLoad from '../hooks/usePageLoad'
+
+// Компонент прелоадера
+function Preloader() {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-gray-900 transition-opacity duration-500">
+      <div className="relative">
+        {/* Логотип */}
+        <div className="text-4xl font-black tracking-tighter animate-pulse">
+          <span className="text-primary">Script</span>
+          <span className="text-accent relative">
+            XX
+            <span className="absolute -top-1 right-0 text-xs text-primary opacity-70">™</span>
+          </span>
+        </div>
+        
+        {/* Анимированные линии загрузки */}
+        <div className="mt-8 flex justify-center">
+          <div className="w-64 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-gradient-to-r from-primary via-accent to-primary rounded-full"
+              initial={{ width: 0 }}
+              animate={{ 
+                width: ["0%", "40%", "60%", "80%", "100%"],
+              }}
+              transition={{ 
+                duration: 2, 
+                ease: "easeInOut",
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+            />
+          </div>
+        </div>
+        
+        {/* Анимированные точки */}
+        <div className="mt-6 flex justify-center gap-2">
+          {[0, 1, 2].map(i => (
+            <motion.div
+              key={i}
+              className="w-3 h-3 rounded-full bg-primary"
+              initial={{ scale: 0.5, opacity: 0.3 }}
+              animate={{ 
+                scale: [0.5, 1, 0.5], 
+                opacity: [0.3, 1, 0.3],
+              }}
+              transition={{ 
+                duration: 1.5, 
+                delay: i * 0.2, 
+                repeat: Infinity, 
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Подпись */}
+        <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          Loading your experience
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Альтернативные современные иконки для ThemeToggle (минимализм, tech)
 function CustomThemeToggle({ theme, toggle }: { theme: string; toggle: () => void }) {
   // SSR-safe: не показываем SVG до первого эффекта на клиенте
@@ -320,6 +386,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   const { theme, setTheme } = useTheme()
   const { width, height } = useWindowSize()
+  const loading = usePageLoad(1000); // Используем хук с минимальной задержкой в 1 секунду
 
   // Обработчик для плавного открытия/закрытия меню
   const handleToggleMenu = (open: boolean) => {
@@ -433,6 +500,11 @@ function Layout({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    // Блокируем/разблокируем скролл в зависимости от состояния загрузки
+    document.body.style.overflow = loading ? 'hidden' : '';
+  }, [loading]);
+
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
   const handleScrollTop = () => {
@@ -440,142 +512,159 @@ function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div 
-      ref={contentRef}
-      className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden"
-    >
-      {/* SVG-сеть на всю страницу, скроллится вместе с контентом до футера */}
-      <div className="absolute inset-0 w-full pointer-events-none z-0 overflow-hidden">
-        <NetworkSVG width={width} height={contentHeight} />
-      </div>
-      {/* Navbar (адаптивный) */}
-      <Navbar
-        showNavbar={showNavbar}
-        theme={theme ?? 'light'}
-        toggleTheme={toggleTheme}
-        mobileOpen={mobileOpen}
-        setMobileOpen={(open) => handleToggleMenu(open)}
-      />
-      {/* Overlay и меню с плавным закрытием */}
-      <div
-        className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
-          menuVisible ? 'pointer-events-auto' : 'pointer-events-none opacity-0'
+    <>
+      {/* Прелоадер */}
+      {loading && <Preloader />}
+      
+      <div 
+        ref={contentRef}
+        className={`flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden ${
+          loading ? 'opacity-0' : 'opacity-100'
         }`}
-        aria-hidden={!menuVisible}
-        tabIndex={-1}
-        onClick={() => handleToggleMenu(false)}
-        style={{ willChange: 'opacity' }}
+        style={{ 
+          transition: 'opacity 0.5s ease-in-out',
+          willChange: 'opacity'
+        }}
       >
-        {/* Плавное появление/исчезновение фона */}
-        <div 
-          className={`fixed inset-0 bg-black/40 transition-opacity duration-300 ${
-            mobileOpen ? 'opacity-100' : 'opacity-0'
-          }`}
+        {/* SVG-сеть на всю страницу */}
+        <div className="absolute inset-0 w-full pointer-events-none z-0 overflow-hidden">
+          <NetworkSVG width={width} height={contentHeight} />
+        </div>
+        
+        {/* Navbar */}
+        <Navbar
+          showNavbar={showNavbar}
+          theme={theme ?? 'light'}
+          toggleTheme={toggleTheme}
+          mobileOpen={mobileOpen}
+          setMobileOpen={(open) => handleToggleMenu(open)}
         />
         
-        {/* Меню с крестиком в правом углу, сдвинутым левее для соответствия с бургером */}
-        <nav
-          className={`fixed top-0 right-0 h-screen w-[320px] max-w-[85vw] flex flex-col p-8 pt-16 gap-0 bg-white dark:bg-gray-900 shadow-2xl rounded-l-2xl border-l border-gray-200 dark:border-gray-800 transition-transform duration-300 ${
-            mobileOpen ? 'translate-x-0' : 'translate-x-full'
+        {/* Overlay и меню с плавным закрытием */}
+        <div
+          className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
+            menuVisible ? 'pointer-events-auto' : 'pointer-events-none opacity-0'
           }`}
-          style={{ zIndex: 100, willChange: 'transform' }}
-          onClick={e => e.stopPropagation()}
+          aria-hidden={!menuVisible}
+          tabIndex={-1}
+          onClick={() => handleToggleMenu(false)}
+          style={{ willChange: 'opacity' }}
         >
-          {/* Крестик в правом углу, корректируем положение статической величиной */}
-          <button
-            aria-label="Закрыть меню"
-            className="absolute p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg transition-all duration-200 focus:outline-none hover:scale-105 md:hidden"
-            onClick={() => handleToggleMenu(false)}
-            style={{ 
-              right: '18px', // Подкорректировали позицию вправо/влево
-              top: '20px'    // Подкорректировали позицию вверх/вниз
-            }}
-          >
-            <div className="w-7 h-7 flex flex-col justify-center items-center">
-              <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform rotate-45" />
-              <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform -rotate-45" />
-            </div>
-          </button>
-          
-          <div className="flex flex-col gap-0 mt-6">
-            {[
-              { href: "/", label: "Home" },
-              { href: "/about", label: "About" },
-              { href: "/skills", label: "Skills" },
-              { href: "/projects", label: "Projects" },
-              { href: "/blog", label: "Blog" },
-              { href: "/resume", label: "Resume" },
-              { href: "/contact", label: "Contact" },
-            ].map((link, idx, arr) => (
-              <React.Fragment key={link.href}>
-                <a
-                  href={link.href}
-                  className="text-lg font-semibold py-3 px-2 rounded transition-all duration-200 hover:bg-primary/10 hover:text-primary flex items-center group"
-                  style={{
-                    animation: `fadeInSection 0.4s cubic-bezier(0.4,0,0.2,1) ${0.08 * idx + 0.1}s both`
-                  }}
-                  onClick={() => handleToggleMenu(false)}
-                >
-                  {link.label}
-                </a>
-                {idx < arr.length - 1 && (
-                  <div className="border-b border-gray-200 dark:border-gray-700 mx-2" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-          
-          <div className="mt-8 flex flex-col items-center gap-2">
-            <span className="text-sm font-medium">Switch theme</span>
-            <CustomThemeToggle theme={theme ?? 'light'} toggle={toggleTheme} />
-          </div>
-        </nav>
-      </div>
-      {/* Кнопка "вверх" */}
-      <button
-        aria-label="Scroll to top"
-        onClick={handleScrollTop}
-        className={`fixed right-6 bottom-8 z-40 bg-primary text-white rounded-full shadow-lg p-3 transition-all duration-500 hover:bg-accent focus:outline-none ${
-          showScrollTop ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-8'
-        }`}
-        style={{ boxShadow: '0 4px 16px 0 #6366f1a0', willChange: 'opacity, transform' }}
-      >
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <motion.path
-            d="M12 19V5M12 5L6 11M12 5l6 6"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 0.6, ease: 'easeInOut' }}
+          {/* Плавное появление/исчезновение фона */}
+          <div 
+            className={`fixed inset-0 bg-black/40 transition-opacity duration-300 ${
+              mobileOpen ? 'opacity-100' : 'opacity-0'
+            }`}
           />
-        </svg>
-      </button>
-      {/* Контент с плавной анимацией появления секций */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-8 relative z-10">
-        <div className="fade-in-section">{children}</div>
-      </main>
-      {/* Футер без анимации - добавляем ref и z-index */}
-      <footer 
-        ref={footerRef}
-        className="py-10 px-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-300 text-center mt-12 shadow-inner rounded-t-2xl relative z-20 overflow-hidden"
-      >
-        <div className="absolute inset-0 pointer-events-none"></div>
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 w-2/3 h-24 bg-gradient-to-r from-primary/30 via-accent/20 to-secondary/10 blur-2xl opacity-40 animate-pulse" />
-        <p className="mb-2 text-lg font-medium relative z-10">
-          © {new Date().getFullYear()} <span className="text-primary font-bold">Bohdan Verbovyi</span>. All rights reserved.
-        </p>
-        <p className="relative z-10">
-          Made with <span className="text-red-400 animate-pulse">❤️</span> using{' '}
-          <a href="https://nextjs.org" className="text-primary hover:underline font-semibold transition-all duration-200 hover:drop-shadow-glow">Next.js</a>
-        </p>
-      </footer>
-      <Analytics />
-      <SpeedInsights />
-    </div>
-  )
+          
+          {/* Меню с крестиком в правом углу, сдвинутым левее */}
+          <nav
+            className={`fixed top-0 right-0 h-screen w-[320px] max-w-[85vw] flex flex-col p-8 pt-16 gap-0 bg-white dark:bg-gray-900 shadow-2xl rounded-l-2xl border-l border-gray-200 dark:border-gray-800 transition-transform duration-300 ${
+              mobileOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+            style={{ zIndex: 100, willChange: 'transform' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Крестик в правом углу, корректируем положение */}
+            <button
+              aria-label="Закрыть меню"
+              className="absolute p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg transition-all duration-200 focus:outline-none hover:scale-105 md:hidden"
+              onClick={() => handleToggleMenu(false)}
+              style={{ 
+                right: '18px',
+                top: '20px'
+              }}
+            >
+              <div className="w-7 h-7 flex flex-col justify-center items-center">
+                <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform rotate-45" />
+                <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform -rotate-45" />
+              </div>
+            </button>
+            
+            <div className="flex flex-col gap-0 mt-6">
+              {[
+                { href: "/", label: "Home" },
+                { href: "/about", label: "About" },
+                { href: "/skills", label: "Skills" },
+                { href: "/projects", label: "Projects" },
+                { href: "/blog", label: "Blog" },
+                { href: "/resume", label: "Resume" },
+                { href: "/contact", label: "Contact" },
+              ].map((link, idx, arr) => (
+                <React.Fragment key={link.href}>
+                  <a
+                    href={link.href}
+                    className="text-lg font-semibold py-3 px-2 rounded transition-all duration-200 hover:bg-primary/10 hover:text-primary flex items-center group"
+                    style={{
+                      animation: `fadeInSection 0.4s cubic-bezier(0.4,0,0.2,1) ${0.08 * idx + 0.1}s both`
+                    }}
+                    onClick={() => handleToggleMenu(false)}
+                  >
+                    {link.label}
+                  </a>
+                  {idx < arr.length - 1 && (
+                    <div className="border-b border-gray-200 dark:border-gray-700 mx-2" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+            
+            <div className="mt-8 flex flex-col items-center gap-2">
+              <span className="text-sm font-medium">Switch theme</span>
+              <CustomThemeToggle theme={theme ?? 'light'} toggle={toggleTheme} />
+            </div>
+          </nav>
+        </div>
+        
+        {/* Кнопка "вверх" */}
+        <button
+          aria-label="Scroll to top"
+          onClick={handleScrollTop}
+          className={`fixed right-6 bottom-8 z-40 bg-primary text-white rounded-full shadow-lg p-3 transition-all duration-500 hover:bg-accent focus:outline-none ${
+            showScrollTop ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none translate-y-8'
+          }`}
+          style={{ boxShadow: '0 4px 16px 0 #6366f1a0', willChange: 'opacity, transform' }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <motion.path
+              d="M12 19V5M12 5L6 11M12 5l6 6"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+            />
+          </svg>
+        </button>
+        
+        {/* Контент */}
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-8 relative z-10">
+          <div className="fade-in-section">{children}</div>
+        </main>
+        
+        {/* Футер */}
+        <footer 
+          ref={footerRef}
+          className="py-10 px-8 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-gray-300 text-center mt-12 shadow-inner rounded-t-2xl relative z-20 overflow-hidden"
+        >
+          <div className="absolute inset-0 pointer-events-none"></div>
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 w-2/3 h-24 bg-gradient-to-r from-primary/30 via-accent/20 to-secondary/10 blur-2xl opacity-40 animate-pulse" />
+          <p className="mb-2 text-lg font-medium relative z-10">
+            © {new Date().getFullYear()} <span className="text-primary font-bold">Bohdan Verbovyi</span>. All rights reserved.
+          </p>
+          <p className="relative z-10">
+            Made with <span className="text-red-400 animate-pulse">❤️</span> using{' '}
+            <a href="https://nextjs.org" className="text-primary hover:underline font-semibold transition-all duration-200 hover:drop-shadow-glow">Next.js</a>
+          </p>
+        </footer>
+        
+        <Analytics />
+        <SpeedInsights />
+      </div>
+    </>
+  );
 }
 
 export default Layout
