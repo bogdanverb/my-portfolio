@@ -455,6 +455,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </p>
       </footer>
       <Analytics />
+      <SpeedInsights />
     </div>
   )
 }
