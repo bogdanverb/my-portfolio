@@ -65,10 +65,12 @@ function useWindowSize() {
 
 // Живая SVG-сеть с useMemo для оптимизации
 function NetworkSVG({ width, height }: { width: number; height: number }) {
-  const cols = 6
-  const rows = 10
-  const xStep = width / (cols - 1)
-  const yStep = height / (rows - 1)
+  // Адаптируем сетку для мобильных устройств
+  const isMobile = width < 768;
+  const cols = isMobile ? 4 : 6;
+  const rows = 10;
+  const xStep = width / (cols - 1);
+  const yStep = height / (rows - 1);
 
   // Мемоизация точек и линий
   const { points, lines } = React.useMemo(() => {
@@ -231,10 +233,10 @@ function Navbar({
 
   return (
     <header
-      className={`py-6 px-4 md:px-10 bg-white dark:bg-gray-900 backdrop-blur-xl shadow-2xl flex items-center border-b border-gray-200 dark:border-gray-800 rounded-b-2xl sticky top-0 z-20 transition-transform duration-500 ${
-        showNavbar ? 'translate-y-0' : '-translate-y-full'
-      }`}
-      style={{ willChange: 'transform' }}
+      className={`py-6 px-4 md:px-10 bg-white dark:bg-gray-900 backdrop-blur-xl shadow-2xl flex items-center border-b border-gray-200 dark:border-gray-800 rounded-b-2xl sticky top-0 z-50 transition-all duration-300 ${
+        showNavbar ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+      } ${mobileOpen ? 'md:translate-y-0 md:opacity-100 -translate-y-full opacity-0' : ''}`}
+      style={{ willChange: 'transform, opacity' }}
     >
       {/* Desktop меню */}
       <nav className="hidden md:flex gap-8 flex-1 text-lg font-semibold">
@@ -252,19 +254,30 @@ function Navbar({
       <div className="hidden md:flex items-center gap-2 ml-6">
         <CustomThemeToggle theme={theme} toggle={toggleTheme} />
       </div>
-      {/* Мобильный бургер */}
-      <div className="flex md:hidden flex-1 justify-end items-center">
+      {/* Мобильный бургер с повышенным z-index - отслеживаем его положение */}
+      <div className="flex md:hidden flex-1 justify-end items-center relative z-[102]" id="burger-container">
         <button
-          aria-label="Открыть меню"
-          className={`p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg transition-all duration-200 focus:outline-none ${
-            mobileOpen ? 'scale-90' : 'scale-100'
-          }`}
-          onClick={() => setMobileOpen(true)}
+          aria-label={mobileOpen ? "Закрыть меню" : "Открыть меню"}
+          className="p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg transition-all duration-200 focus:outline-none"
+          onClick={() => setMobileOpen(!mobileOpen)}
         >
-          {/* Анимированный бургер */}
-          <span className="block w-7 h-1 bg-primary rounded transition-all duration-300 mb-1" style={{ transform: mobileOpen ? 'rotate(45deg) translateY(8px)' : 'none' }} />
-          <span className={`block w-7 h-1 bg-primary rounded transition-all duration-300 mb-1 ${mobileOpen ? 'opacity-0' : ''}`} />
-          <span className="block w-7 h-1 bg-primary rounded transition-all duration-300" style={{ transform: mobileOpen ? 'rotate(-45deg) translateY(-8px)' : 'none' }} />
+          {/* Обе иконки имеют одинаковый размер и центрирование */}
+          <div className="w-7 h-7 flex flex-col justify-center items-center">
+            {mobileOpen ? (
+              // Крестик с такой же толщиной как и полоски бургера
+              <>
+                <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform rotate-45" />
+                <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform -rotate-45" />
+              </>
+            ) : (
+              // Стандартный бургер при закрытом меню
+              <>
+                <span className="block w-7 h-1 bg-primary rounded mb-1.5" />
+                <span className="block w-7 h-1 bg-primary rounded mb-1.5" />
+                <span className="block w-7 h-1 bg-primary rounded" />
+              </>
+            )}
+          </div>
         </button>
       </div>
     </header>
@@ -275,11 +288,69 @@ function Layout({ children }: { children: React.ReactNode }) {
   const [showNavbar, setShowNavbar] = useState(true)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [menuVisible, setMenuVisible] = useState(false) // Новое состояние для анимации
   const lastScroll = useRef(0)
   const userScrolled = useRef(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState(3000)
 
   const { theme, setTheme } = useTheme()
   const { width, height } = useWindowSize()
+
+  // Обработчик для плавного открытия/закрытия меню
+  const handleToggleMenu = (open: boolean) => {
+    if (open) {
+      // Сначала показываем меню
+      setMenuVisible(true);
+      // На мобильных - скрыть навбар (на десктопе оставить)
+      if (width < 768) {
+        setShowNavbar(false);
+      }
+      // Блокируем прокрутку
+      document.body.style.overflow = 'hidden';
+      // Небольшая задержка для правильной анимации
+      setTimeout(() => setMobileOpen(true), 10);
+    } else {
+      // Сначала анимируем закрытие
+      setMobileOpen(false);
+      // Через 200мс показываем навбар
+      setTimeout(() => {
+        // Проверяем нужно ли показать навбар после закрытия меню
+        const current = window.scrollY;
+        if (current <= 80 || width >= 768) {
+          setShowNavbar(true);
+        }
+      }, 200);
+      // Разрешаем прокрутку
+      document.body.style.overflow = '';
+      // Затем удаляем из DOM после завершения анимации
+      setTimeout(() => setMenuVisible(false), 300);
+    }
+  };
+
+  // Измерение высоты контента
+  useEffect(() => {
+    const updateContentHeight = () => {
+      if (contentRef.current) {
+        // Берём максимум из реальной высоты и 3000px
+        const newHeight = Math.max(contentRef.current.scrollHeight, 3000);
+        setContentHeight(newHeight);
+      }
+    };
+    
+    updateContentHeight();
+    
+    // Перерассчитываем при изменении размера окна
+    window.addEventListener('resize', updateContentHeight);
+    
+    // И через небольшую задержку для уверенности, что всё загрузилось
+    const timer = setTimeout(updateContentHeight, 500);
+    
+    return () => {
+      window.removeEventListener('resize', updateContentHeight);
+      clearTimeout(timer);
+    };
+  }, [children]);
 
   useEffect(() => {
     const checkScroll = () => {
@@ -342,10 +413,13 @@ function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden">
+    <div 
+      ref={contentRef}
+      className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden"
+    >
       {/* SVG-сеть на всю страницу, скроллится вместе с контентом */}
       <div className="absolute inset-0 w-full pointer-events-none z-0">
-        <NetworkSVG width={width} height={height * 2} />
+        <NetworkSVG width={width} height={contentHeight} />
       </div>
       {/* Navbar (адаптивный) */}
       <Navbar
@@ -353,69 +427,81 @@ function Layout({ children }: { children: React.ReactNode }) {
         theme={theme ?? 'light'}
         toggleTheme={toggleTheme}
         mobileOpen={mobileOpen}
-        setMobileOpen={setMobileOpen}
+        setMobileOpen={(open) => handleToggleMenu(open)}
       />
-      {/* Overlay и меню на самом верхнем уровне */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-50"
-          aria-hidden="true"
-          tabIndex={-1}
-          onClick={() => setMobileOpen(false)}
+      {/* Overlay и меню с плавным закрытием */}
+      <div
+        className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
+          menuVisible ? 'pointer-events-auto' : 'pointer-events-none opacity-0'
+        }`}
+        aria-hidden={!menuVisible}
+        tabIndex={-1}
+        onClick={() => handleToggleMenu(false)}
+        style={{ willChange: 'opacity' }}
+      >
+        {/* Плавное появление/исчезновение фона */}
+        <div 
+          className={`fixed inset-0 bg-black/40 transition-opacity duration-300 ${
+            mobileOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+        
+        {/* Меню с крестиком в правом углу, сдвинутым левее для соответствия с бургером */}
+        <nav
+          className={`fixed top-0 right-0 h-screen w-[320px] max-w-[85vw] flex flex-col p-8 pt-16 gap-0 bg-white dark:bg-gray-900 shadow-2xl rounded-l-2xl border-l border-gray-200 dark:border-gray-800 transition-transform duration-300 ${
+            mobileOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          style={{ zIndex: 100, willChange: 'transform' }}
+          onClick={e => e.stopPropagation()}
         >
-          <div className="absolute inset-0 bg-black/40 transition-opacity duration-300" />
-          <nav
-            className="absolute top-0 right-0 h-screen w-[320px] max-w-full flex flex-col p-8 gap-0 animate-slide-in bg-white dark:bg-gray-900 shadow-2xl rounded-l-2xl border-l border-gray-200 dark:border-gray-800"
-            style={{
-              opacity: 1,
-              zIndex: 9999,
+          {/* Крестик в правом углу, корректируем положение статической величиной */}
+          <button
+            aria-label="Закрыть меню"
+            className="absolute p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg transition-all duration-200 focus:outline-none hover:scale-105 md:hidden"
+            onClick={() => handleToggleMenu(false)}
+            style={{ 
+              right: '18px', // Подкорректировали позицию вправо/влево
+              top: '20px'    // Подкорректировали позицию вверх/вниз
             }}
-            onClick={e => e.stopPropagation()}
           >
-            <button
-              aria-label="Закрыть меню"
-              className="self-end mb-6 p-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow transition-all duration-200 hover:scale-110 flex items-center justify-center"
-              onClick={() => setMobileOpen(false)}
-            >
-              {/* SVG-крестик */}
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <line x1="6" y1="6" x2="18" y2="18" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/>
-                <line x1="18" y1="6" x2="6" y2="18" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/>
-              </svg>
-            </button>
-            <div className="flex flex-col gap-0">
-              {[
-                { href: "/", label: "Home" },
-                { href: "/about", label: "About" },
-                { href: "/skills", label: "Skills" },
-                { href: "/projects", label: "Projects" },
-                { href: "/blog", label: "Blog" },
-                { href: "/resume", label: "Resume" },
-                { href: "/contact", label: "Contact" },
-              ].map((link, idx, arr) => (
-                <React.Fragment key={link.href}>
-                  <a
-                    href={link.href}
-                    className="text-lg font-semibold py-3 px-2 rounded transition-all duration-200 hover:bg-primary/10 hover:text-primary flex items-center group"
-                    style={{
-                      animation: `fadeInSection 0.4s cubic-bezier(0.4,0,0.2,1) ${0.08 * idx + 0.1}s both`
-                    }}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                  {idx < arr.length - 1 && (
-                    <div className="border-b border-gray-200 dark:border-gray-700 mx-2" />
-                  )}
-                </React.Fragment>
-              ))}
+            <div className="w-7 h-7 flex flex-col justify-center items-center">
+              <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform rotate-45" />
+              <span className="absolute w-7 h-1 bg-primary rounded transition-all duration-300 transform -rotate-45" />
             </div>
-            <div className="mt-8">
-              <CustomThemeToggle theme={theme ?? 'light'} toggle={toggleTheme} />
-            </div>
-          </nav>
-        </div>
-      )}
+          </button>
+          
+          <div className="flex flex-col gap-0">
+            {[
+              { href: "/", label: "Home" },
+              { href: "/about", label: "About" },
+              { href: "/skills", label: "Skills" },
+              { href: "/projects", label: "Projects" },
+              { href: "/blog", label: "Blog" },
+              { href: "/resume", label: "Resume" },
+              { href: "/contact", label: "Contact" },
+            ].map((link, idx, arr) => (
+              <React.Fragment key={link.href}>
+                <a
+                  href={link.href}
+                  className="text-lg font-semibold py-3 px-2 rounded transition-all duration-200 hover:bg-primary/10 hover:text-primary flex items-center group"
+                  style={{
+                    animation: `fadeInSection 0.4s cubic-bezier(0.4,0,0.2,1) ${0.08 * idx + 0.1}s both`
+                  }}
+                  onClick={() => handleToggleMenu(false)}
+                >
+                  {link.label}
+                </a>
+                {idx < arr.length - 1 && (
+                  <div className="border-b border-gray-200 dark:border-gray-700 mx-2" />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+          <div className="mt-8">
+            <CustomThemeToggle theme={theme ?? 'light'} toggle={toggleTheme} />
+          </div>
+        </nav>
+      </div>
       {/* Кнопка "вверх" */}
       <button
         aria-label="Scroll to top"
