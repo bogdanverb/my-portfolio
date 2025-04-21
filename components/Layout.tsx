@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Analytics } from "@vercel/analytics/react"
 import { useTheme } from 'next-themes'
+import { Analytics } from "@vercel/analytics/react"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 // Альтернативные современные иконки для ThemeToggle (минимализм, tech)
 function CustomThemeToggle({ theme, toggle }: { theme: string; toggle: () => void }) {
@@ -48,12 +49,24 @@ function CustomThemeToggle({ theme, toggle }: { theme: string; toggle: () => voi
   )
 }
 
+// Хук для получения размеров окна
+function useWindowSize() {
+  const [size, setSize] = useState({ width: 1920, height: 1080 });
+  useEffect(() => {
+    function update() {
+      setSize({ width: window.innerWidth, height: window.innerHeight });
+    }
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return size;
+}
+
 // Живая SVG-сеть с useMemo для оптимизации
-function NetworkSVG() {
+function NetworkSVG({ width, height }: { width: number; height: number }) {
   const cols = 6
   const rows = 10
-  const width = 1920
-  const height = 5000
   const xStep = width / (cols - 1)
   const yStep = height / (rows - 1)
 
@@ -128,8 +141,8 @@ function NetworkSVG() {
     <svg
       className="absolute left-0 top-0 w-full pointer-events-none select-none"
       style={{ minHeight: '100vh', zIndex: 0 }}
-      width="100%"
-      height="100%"
+      width={width}
+      height={height}
       viewBox={`0 0 ${width} ${height}`}
       fill="none"
       preserveAspectRatio="none"
@@ -266,6 +279,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const userScrolled = useRef(false)
 
   const { theme, setTheme } = useTheme()
+  const { width, height } = useWindowSize()
 
   useEffect(() => {
     const checkScroll = () => {
@@ -331,7 +345,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-200 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 text-secondary dark:text-gray-100 transition-colors duration-300 relative overflow-x-hidden">
       {/* SVG-сеть на всю страницу, скроллится вместе с контентом */}
       <div className="absolute inset-0 w-full pointer-events-none z-0">
-        <NetworkSVG />
+        <NetworkSVG width={width} height={height * 2} />
       </div>
       {/* Navbar (адаптивный) */}
       <Navbar
