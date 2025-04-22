@@ -1,247 +1,169 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useTheme } from 'next-themes';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { motion } from 'framer-motion';
 
-type Point = {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  connections: number[];
-};
+export default function WebBackground() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const requestRef = useRef<number | null>(null);
+  const nodesRef = useRef<any[]>([]);
+  const mouseRef = useRef({ x: 0, y: 0, radius: 200 });
 
-const WebBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { theme } = useTheme();
-  const [isSupported, setIsSupported] = useState(true);
-  
+  // Создадим конфигурацию единожды с проверкой для SSR
+  const config = useMemo(() => {
+    const isBrowser = typeof window !== 'undefined';
+    return {
+      nodeCount: isBrowser && window.innerWidth < 768 ? 30 : 50,
+      connectionDistance: isBrowser && window.innerWidth < 768 ? 150 : 200,
+      nodeSize: { min: 2, max: 4 },
+      speed: { min: 0.3, max: 0.8 },
+      colors: {
+        primary: '#6366f1',
+        accent: '#FF5733',
+        lines: ['rgba(99, 102, 241, 0.15)', 'rgba(255, 87, 51, 0.1)']
+      }
+    };
+  }, []);
+
+  // Инициализация узлов и обработчиков событий
   useEffect(() => {
-    // Проверяем поддержку canvas и performance
-    if (typeof window !== 'undefined') {
-      try {
-        const canvas = document.createElement('canvas');
-        const isCanvasSupported = !!canvas.getContext('2d');
-        
-        if (!isCanvasSupported) {
-          console.log('Canvas is not supported in this browser');
-          setIsSupported(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error checking canvas support:', error);
-        setIsSupported(false);
-        return;
-      }
-    }
-    
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
+    if (!canvas || typeof window === 'undefined') return;
+
     const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      setIsSupported(false);
-      return;
-    }
-    
-    // Оптимизация: ограничиваем FPS для экономии ресурсов
-    let lastFrameTime = 0;
-    const targetFPS = 30; // Снижаем FPS для более стабильной работы
-    const frameInterval = 1000 / targetFPS;
-    
-    // Устанавливаем размер canvas равным окну браузера
-    const setCanvasSize = () => {
-      try {
-        // Используем devicePixelRatio для ретина-дисплеев, но ограничиваем его
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        
-        canvas.width = window.innerWidth * dpr;
-        canvas.height = window.innerHeight * dpr;
-        
-        // Устанавливаем CSS размеры
-        canvas.style.width = `${window.innerWidth}px`;
-        canvas.style.height = `${window.innerHeight}px`;
-        
-        // Масштабируем контекст
-        ctx.scale(dpr, dpr);
-      } catch (error) {
-        console.error('Error setting canvas size:', error);
-        setIsSupported(false);
+    if (!ctx) return;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      
+      // Пересоздаем узлы при изменении размера
+      initNodes();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current.x = e.clientX;
+      mouseRef.current.y = e.clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches[0]) {
+        mouseRef.current.x = e.touches[0].clientX;
+        mouseRef.current.y = e.touches[0].clientY;
       }
     };
-    
-    // Вызываем сразу и добавляем слушатель с дебаунсингом для изменения размера окна
-    setCanvasSize();
-    
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const handleResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        setCanvasSize();
-        connectPoints(); // Пересчитываем связи при изменении размера
-      }, 200);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    // Адаптивные настройки в зависимости от устройства
-    const isMobile = window.innerWidth < 768;
-    const isLowPower = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    // Количество точек зависит от размера экрана и производительности устройства
-    const pointDensity = isLowPower ? 
-      (isMobile ? 10 : 15) : 
-      (isMobile ? 15 : 25);
+
+    // Создание узлов
+    const initNodes = () => {
+      nodesRef.current = [];
+      const nodeCount = Math.min(config.nodeCount, Math.floor(window.innerWidth / 30));
       
-    // Расчет оптимального количества точек с учетом площади экрана
-    const screenArea = (window.innerWidth * window.innerHeight) / 1000;
-    const numPoints = Math.min(
-      Math.floor(screenArea * (pointDensity / 100)),
-      isLowPower ? 50 : 100 // Максимальное количество точек
-    );
-    
-    // Создаем точки с оптимизированными параметрами
-    const points: Point[] = [];
-    for (let i = 0; i < numPoints; i++) {
-      points.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * (isLowPower ? 0.2 : 0.5), // Медленнее для мобильных
-        vy: (Math.random() - 0.5) * (isLowPower ? 0.2 : 0.5),
-        connections: [],
-      });
-    }
-    
-    // Создаем связи между точками с оптимизацией
-    const maxConnectionDistance = Math.min(window.innerWidth, window.innerHeight) / (isMobile ? 5 : 4);
-    
-    const connectPoints = () => {
-      try {
-        // Сбрасываем соединения
-        points.forEach(point => {
-          point.connections = [];
+      for (let i = 0; i < nodeCount; i++) {
+        const radius = Math.random() * (config.nodeSize.max - config.nodeSize.min) + config.nodeSize.min;
+        nodesRef.current.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius,
+          vx: Math.random() * (config.speed.max - config.speed.min) + config.speed.min * (Math.random() > 0.5 ? 1 : -1),
+          vy: Math.random() * (config.speed.max - config.speed.min) + config.speed.min * (Math.random() > 0.5 ? 1 : -1),
+          color: Math.random() > 0.5 ? config.colors.primary : config.colors.accent,
         });
+      }
+    };
+
+    // Анимация
+    const animate = () => {
+      requestRef.current = requestAnimationFrame(animate);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Обновление позиций узлов
+      nodesRef.current.forEach(node => {
+        node.x += node.vx;
+        node.y += node.vy;
         
-        // Оптимизация: проверяем расстояние только для ближайших точек
-        // Используем сетку для ускорения поиска соседей
-        for (let i = 0; i < points.length; i++) {
-          // Ограничиваем количество соединений для каждой точки
-          const maxConnections = isLowPower ? 3 : 5;
+        // Отскок от границ
+        if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+        if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+        
+        // Отталкивание от курсора
+        const dx = mouseRef.current.x - node.x;
+        const dy = mouseRef.current.y - node.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        
+        if (dist < mouseRef.current.radius && dist > 0) {
+          const angle = Math.atan2(dy, dx);
+          const force = (mouseRef.current.radius - dist) / mouseRef.current.radius;
           
-          if (points[i].connections.length >= maxConnections) continue;
+          node.vx -= Math.cos(angle) * force * 0.02;
+          node.vy -= Math.sin(angle) * force * 0.02;
+        }
+        
+        // Ограничение скорости
+        const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
+        if (speed > config.speed.max) {
+          node.vx = (node.vx / speed) * config.speed.max;
+          node.vy = (node.vy / speed) * config.speed.max;
+        }
+        
+        // Рисование узла
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fillStyle = node.color;
+        ctx.fill();
+      });
+      
+      // Рисование соединений между узлами
+      for (let i = 0; i < nodesRef.current.length; i++) {
+        for (let j = i + 1; j < nodesRef.current.length; j++) {
+          const dx = nodesRef.current[i].x - nodesRef.current[j].x;
+          const dy = nodesRef.current[i].y - nodesRef.current[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
           
-          for (let j = i + 1; j < points.length; j++) {
-            if (points[j].connections.length >= maxConnections) continue;
+          if (dist < config.connectionDistance) {
+            ctx.beginPath();
+            ctx.moveTo(nodesRef.current[i].x, nodesRef.current[i].y);
+            ctx.lineTo(nodesRef.current[j].x, nodesRef.current[j].y);
             
-            const dx = points[i].x - points[j].x;
-            const dy = points[i].y - points[j].y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            // Выбор стилей линий в зависимости от цветов узлов
+            const colorIndex = (nodesRef.current[i].color === config.colors.primary && 
+                               nodesRef.current[j].color === config.colors.primary) ? 0 : 1;
             
-            if (distance < maxConnectionDistance) {
-              points[i].connections.push(j);
-              points[j].connections.push(i);
-            }
+            ctx.strokeStyle = config.colors.lines[colorIndex];
+            ctx.lineWidth = (1 - dist / config.connectionDistance) * 1.5;
+            ctx.stroke();
           }
         }
-      } catch (error) {
-        console.error('Error connecting points:', error);
       }
     };
-    
-    connectPoints();
-    
-    // Оптимизация: уменьшаем частоту пересчета соединений
-    const connectionTimer = setInterval(connectPoints, isLowPower ? 3000 : 2000);
-    
-    // Функция анимации с оптимизацией FPS
-    const animate = (currentTime: number) => {
-      // Ограничение FPS
-      if (currentTime - lastFrameTime < frameInterval) {
-        animationId = requestAnimationFrame(animate);
-        return;
-      }
-      
-      lastFrameTime = currentTime;
-      
-      try {
-        ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio || 1), 
-                           canvas.height / (window.devicePixelRatio || 1));
-        
-        // Определяем цвет в зависимости от темы
-        const lineColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.09)';
-        const pointColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)';
-        
-        // Рисуем соединения
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = isLowPower ? 0.5 : 0.8;
-        
-        points.forEach((point, i) => {
-          point.connections.forEach(j => {
-            if (i < j) { // Рисуем каждую линию только один раз
-              ctx.beginPath();
-              ctx.moveTo(point.x, point.y);
-              ctx.lineTo(points[j].x, points[j].y);
-              ctx.stroke();
-            }
-          });
-        });
-        
-        // Рисуем и обновляем точки
-        ctx.fillStyle = pointColor;
-        
-        points.forEach(point => {
-          // Обновляем позицию
-          point.x += point.vx;
-          point.y += point.vy;
-          
-          // Отражение от краев с небольшим случайным фактором для более естественного движения
-          if (point.x <= 0 || point.x >= window.innerWidth) {
-            point.vx = -point.vx * (0.9 + Math.random() * 0.2);
-            point.x = Math.max(0, Math.min(window.innerWidth, point.x));
-          }
-          if (point.y <= 0 || point.y >= window.innerHeight) {
-            point.vy = -point.vy * (0.9 + Math.random() * 0.2);
-            point.y = Math.max(0, Math.min(window.innerHeight, point.y));
-          }
-          
-          // Рисуем точку с учетом мобильности
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, isLowPower ? 1.5 : 2, 0, Math.PI * 2);
-          ctx.fill();
-        });
-      } catch (error) {
-        console.error('Error in animation loop:', error);
-        cancelAnimationFrame(animationId);
-        setIsSupported(false);
-        return;
-      }
-      
-      animationId = requestAnimationFrame(animate);
-    };
-    
-    let animationId = requestAnimationFrame(animate);
-    
-    // Очистка при размонтировании
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearInterval(connectionTimer);
-      cancelAnimationFrame(animationId);
-    };
-  }, [theme]);
-  
-  // Не рендерим canvas, если он не поддерживается
-  if (!isSupported) return null;
-  
-  return (
-    <canvas
-      ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"
-      style={{ 
-        opacity: 0.85,
-        willChange: 'transform', // Оптимизация для GPU
-      }}
-      aria-hidden="true"
-    />
-  );
-};
 
-// Экспортируем с мемоизацией для предотвращения ненужных перерисовок
-export default React.memo(WebBackground);
+    // Инициализация и запуск
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove);
+    
+    requestRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [config]);
+
+  return (
+    <motion.div 
+      className="fixed inset-0 -z-10 pointer-events-none" 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+    >
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
+        style={{ width: '100%', height: '100%' }}
+      />
+    </motion.div>
+  );
+}
