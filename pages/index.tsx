@@ -1,107 +1,87 @@
+// Импортируем только необходимые компоненты для начальной работы
 import Layout from '../components/Layout'
 import FadeIn from '../components/FadeIn'
+// import SEOHead from '../components/SEOHead'  // Закомментируем пока не создадим файл
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import ProjectCard from '../components/ProjectCard'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Github, Linkedin, Mail, Instagram } from '../components/ModernIcons'
+import SocialIcons from '../components/SocialIcons'
+// import SkillItem from '../components/SkillItem'  // Закомментируем пока не создадим файл
+// import { projectsData, skillsData, postsData } from '../data/content' // Закомментируем до создания файла
 
-const projects = [
+// Временные данные вместо файла content.ts
+const projectsData = [
   {
     title: 'Portfolio Website',
     description: 'Modern portfolio site built with Next.js, Tailwind, Framer Motion.',
     slug: 'portfolio',
     cover: '/images/projects/project-1.jpg',
+    featured: true
   },
   {
     title: 'Blog Platform',
     description: 'Markdown blog with SSG and i18n support.',
     slug: 'blog-platform',
     cover: '/images/projects/project-2.jpg',
+    featured: true
   },
-]
+];
 
-const skills = [
-  'JavaScript / TypeScript',
-  'React / Next.js',
-  'Node.js / Express',
-  'HTML5 / CSS3 / Tailwind CSS',
-  'Git / GitHub / CI/CD',
-  'REST API / GraphQL',
-  'Markdown',
-  'Framer Motion / Animation',
-]
+const skillsData = {
+  technical: [
+    'JavaScript / TypeScript',
+    'React / Next.js',
+    'Node.js / Express',
+    'HTML5 / CSS3 / Tailwind CSS',
+    'Git / GitHub / CI/CD',
+    'REST API / GraphQL',
+    'Markdown',
+    'Framer Motion / Animation',
+  ]
+};
 
-const posts = [
+const postsData = [
   {
     title: 'React Certificate',
     description: 'Certified knowledge of React and modern frontend.',
     slug: 'react-cert',
+    featured: true
   },
   {
     title: 'TypeScript for Professionals',
     description: 'Deep understanding of typing and best practices.',
     slug: 'ts-pro',
+    featured: true
   },
-]
-
-function ModernSocialIcons() {
-  return (
-    <div className="flex gap-4">
-      <a
-        href="https://github.com/bogdanverb"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group bg-white/80 dark:bg-gray-900/80 rounded-full p-3 shadow-lg hover:scale-110 transition-all duration-200 border border-gray-200 dark:border-gray-800 hover:border-primary"
-        aria-label="GitHub"
-      >
-        <Github className="w-6 h-6 text-gray-700 dark:text-gray-200 group-hover:text-primary transition" />
-      </a>
-      <a
-        href="https://www.linkedin.com/in/scriptxx/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group bg-white/80 dark:bg-gray-900/80 rounded-full p-3 shadow-lg hover:scale-110 transition-all duration-200 border border-gray-200 dark:border-gray-800 hover:border-primary"
-        aria-label="LinkedIn"
-      >
-        <Linkedin className="w-6 h-6 text-gray-700 dark:text-gray-200 group-hover:text-primary transition" />
-      </a>
-      <a
-        href="mailto:bogdan.verb1@gmail.com"
-        className="group bg-white/80 dark:bg-gray-900/80 rounded-full p-3 shadow-lg hover:scale-110 transition-all duration-200 border border-gray-200 dark:border-gray-800 hover:border-primary"
-        aria-label="Email"
-      >
-        <Mail className="w-6 h-6 text-gray-700 dark:text-gray-200 group-hover:text-primary transition" />
-      </a>
-      <a
-        href="https://www.instagram.com/bogdan_verboviy/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group bg-white/80 dark:bg-gray-900/80 rounded-full p-3 shadow-lg hover:scale-110 transition-all duration-200 border border-gray-200 dark:border-gray-800 hover:border-primary"
-        aria-label="Instagram"
-      >
-        <Instagram className="w-6 h-6 text-gray-700 dark:text-gray-200 group-hover:text-primary transition" />
-      </a>
-    </div>
-  )
-}
+];
 
 export default function Home() {
   const ref = useRef<HTMLDivElement>(null)
   const { scrollY } = useScroll({ container: ref })
   const y = useTransform(scrollY, [0, 300], [0, 60])
 
+  // Используем только featured проекты на главной странице
+  const featuredProjects = projectsData.filter(project => project.featured).slice(0, 2);
+  const featuredPosts = postsData.filter(post => post.featured).slice(0, 2);
+
   return (
     <Layout>
-      {/* Профиль с анимацией, декорациями и современной обводкой */}
+      {/* Убираем SEOHead пока не создадим */}
+      {/* <SEOHead 
+        title="Главная"
+        description="Портфолио frontend-разработчика с опытом в React, Next.js и современных веб-технологиях" 
+      /> */}
+      
+      {/* Профиль с анимацией */}
       <motion.section
         className="relative flex flex-col items-center justify-center text-center py-20 md:py-28"
         initial={{ opacity: 0, scale: 0.95, y: 40 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
       >
-        {/* Аватар с толстой обводкой и crop */}
+        {/* Аватар с обводкой */}
         <motion.div
           className="mb-6 z-10"
           initial={{ opacity: 0, y: 20 }}
@@ -144,7 +124,7 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <ModernSocialIcons />
+          <SocialIcons />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -167,7 +147,6 @@ export default function Home() {
           className="relative py-32 md:py-44 text-center bg-gradient-to-br from-primary via-accent to-secondary text-white overflow-hidden"
           style={{ y }}
         >
-          {/* Decorative circles */}
           <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary opacity-30 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 right-0 w-80 h-80 bg-accent opacity-20 rounded-full blur-2xl pointer-events-none" />
           <h1 className="text-5xl md:text-7xl font-extrabold mb-6 drop-shadow-lg">
@@ -186,12 +165,12 @@ export default function Home() {
 
         {/* Projects */}
         <FadeIn>
-          <section className="py-20 max-w-5xl mx-auto" id="projects">
+          <section className="py-20 max-w-5xl mx-auto px-4" id="projects">
             <h2 className="text-3xl font-extrabold mb-10 text-center bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent drop-shadow-lg">
               Projects
             </h2>
             <div className="grid gap-8 md:grid-cols-2">
-              {projects.map((proj) => (
+              {featuredProjects.map((proj) => (
                 <ProjectCard
                   key={proj.slug}
                   title={proj.title}
@@ -211,18 +190,21 @@ export default function Home() {
 
         {/* Skills */}
         <FadeIn>
-          <section className="py-20 max-w-2xl mx-auto" id="skills">
+          <section className="py-20 max-w-2xl mx-auto px-4" id="skills">
             <h2 className="text-3xl font-extrabold mb-10 text-center bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent drop-shadow-lg">
               Skills
             </h2>
             <div className="grid gap-4 md:grid-cols-2">
-              {skills.map((skill) => (
-                <div
+              {skillsData.technical.map((skill) => (
+                // Временный вариант вместо компонента SkillItem
+                <motion.div
                   key={skill}
-                  className="card flex items-center justify-center text-lg font-semibold py-4 px-6 bg-white/90 dark:bg-gray-900/80 rounded-2xl shadow-md hover:shadow-xl transition"
+                  className="flex items-center justify-center text-lg font-medium py-4 px-6 bg-white/90 dark:bg-gray-900/80 rounded-2xl shadow-sm hover:shadow-md transition"
+                  whileHover={{ y: -4 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  {skill}
-                </div>
+                  <span>{skill}</span>
+                </motion.div>
               ))}
             </div>
           </section>
@@ -230,12 +212,12 @@ export default function Home() {
 
         {/* Blog/Certificates */}
         <FadeIn>
-          <section className="py-20 max-w-2xl mx-auto" id="blog">
+          <section className="py-20 max-w-2xl mx-auto px-4" id="blog">
             <h2 className="text-3xl font-extrabold mb-10 text-center bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent drop-shadow-lg">
               Blog & Certificates
             </h2>
             <ul className="space-y-4">
-              {posts.map((post) => (
+              {featuredPosts.map((post) => (
                 <li key={post.slug} className="card border rounded-xl p-4 hover:shadow-xl transition bg-white dark:bg-gray-900">
                   <Link href={`/blog/${post.slug}`}>
                     <span className="text-lg font-semibold">{post.title}</span>
@@ -254,13 +236,13 @@ export default function Home() {
 
         {/* Contact */}
         <FadeIn>
-          <section className="py-20 max-w-2xl mx-auto" id="contact">
+          <section className="py-20 max-w-2xl mx-auto px-4" id="contact">
             <h2 className="text-3xl font-extrabold mb-10 text-center bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent drop-shadow-lg">
               Contact
             </h2>
             <p className="mb-6 text-center text-lg">Open to new projects and collaboration.</p>
             <div className="flex justify-center">
-              <ModernSocialIcons />
+              <SocialIcons />
             </div>
             <div className="mt-10 text-center">
               <Link href="/contact" className="text-primary hover:underline font-semibold">
@@ -271,5 +253,5 @@ export default function Home() {
         </FadeIn>
       </div>
     </Layout>
-  )
+  );
 }

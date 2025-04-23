@@ -2,43 +2,22 @@ import React, { useState } from 'react'
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { ThemeProvider } from 'next-themes'
+import dynamic from 'next/dynamic'
 
 import usePageLoad from '../hooks/usePageLoad'
+import ErrorBoundary from './ErrorBoundary'
 import Header from './Header'
 import Footer from './Footer'
-import WebBackground from './WebBackground'
 import PageTransition from './PageTransition'
 import Preloader from './Preloader'
 
-// Простой компонент ErrorBoundary для отлова ошибок
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback: React.ReactNode; onError?: () => void },
-  { hasError: boolean }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error) {
-    console.error("Error in component:", error);
-    if (this.props.onError) {
-      this.props.onError();
-    }
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-
-    return this.props.children;
-  }
-}
+// Динамический импорт WebBackground с загрузочной заглушкой
+const WebBackground = dynamic(() => import('./WebBackground'), {
+  ssr: false,
+  loading: () => (
+    <div className="fixed inset-0 -z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800" />
+  )
+})
 
 function Layout({ children }: { children: React.ReactNode }) {
   const isLoading = usePageLoad(600); // Уменьшено время загрузки для лучшего UX
@@ -59,7 +38,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <div className="fixed inset-0 -z-10 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800" />
           )}
           
-          {/* Используем error boundary для WebBackground */}
+          {/* Используем error boundary только для WebBackground */}
           <ErrorBoundary fallback={null} onError={handleWebBackgroundError}>
             <WebBackground />
           </ErrorBoundary>
