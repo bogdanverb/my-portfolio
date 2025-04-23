@@ -11,6 +11,13 @@ interface FadeInProps {
   threshold?: number;
 }
 
+interface FadeInStaggerProps {
+  children: React.ReactNode;
+  className?: string;
+  staggerDelay?: number;
+  viewThreshold?: number;
+}
+
 export default function FadeIn({
   children,
   delay = 0,
@@ -78,6 +85,41 @@ export default function FadeIn({
         delay: delay,
         ease: [0.25, 0.1, 0.25, 1.0] // cubic-bezier для более плавного движения
       }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Add the FadeInStagger component export
+export function FadeInStagger({
+  children,
+  className = '',
+  staggerDelay = 0.1,
+  viewThreshold = 0.2
+}: FadeInStaggerProps) {
+  const [ref, inView] = useInView({
+    triggerOnce: true,
+    threshold: viewThreshold,
+  });
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: staggerDelay
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={inView ? "visible" : "hidden"}
+      variants={containerVariants}
       className={className}
     >
       {children}

@@ -179,7 +179,7 @@ export default function About() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div>
                 <h3 className="font-semibold text-primary mb-4">Технические навыки</h3>
-                <FadeInStagger staggerChildren={0.1}>
+                <FadeInStagger staggerDelay={0.1}>
                   {skills.map((skill) => (
                     <FadeIn key={skill.name} direction="left" className="mb-4">
                       <SkillItem skill={skill.name} level={skill.level} />
