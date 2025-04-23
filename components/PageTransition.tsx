@@ -1,51 +1,34 @@
+import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/router';
 
-type PageTransitionProps = {
+interface PageTransitionProps {
   children: ReactNode;
-};
+}
 
 export default function PageTransition({ children }: PageTransitionProps) {
-  const router = useRouter();
-  
-  // Настройки анимации
-  const pageVariants = {
-    hidden: {
+  const variants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { 
       opacity: 0,
-      y: 20,
-    },
-    enter: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.4,
-        ease: [0.25, 0.1, 0.25, 1.0],
-        when: "beforeChildren",
-      },
-    },
-    exit: {
-      opacity: 0,
-      y: -20,
-      transition: {
-        duration: 0.3,
-        ease: [0.25, 0.1, 0.25, 1.0],
-      },
-    },
+      // Делаем выход быстрее входа для более плавного перехода
+      transition: { duration: 0.15 } 
+    }
   };
   
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={router.route}
-        initial="hidden"
-        animate="enter"
-        exit="exit"
-        variants={pageVariants}
-        className="min-h-screen flex flex-col relative"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      variants={variants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{
+        type: "tween", 
+        ease: "easeInOut",
+        duration: 0.3
+      }}
+    >
+      {children}
+    </motion.div>
   );
 }

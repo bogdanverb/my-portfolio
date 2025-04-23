@@ -1,169 +1,208 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useRef, useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 
 export default function WebBackground() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const requestRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const nodesRef = useRef<any[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0, radius: 200 });
-
-  // Создадим конфигурацию единожды с проверкой для SSR
-  const config = useMemo(() => {
-    const isBrowser = typeof window !== 'undefined';
-    return {
-      nodeCount: isBrowser && window.innerWidth < 768 ? 30 : 50,
-      connectionDistance: isBrowser && window.innerWidth < 768 ? 150 : 200,
-      nodeSize: { min: 2, max: 4 },
-      speed: { min: 0.3, max: 0.8 },
-      colors: {
-        primary: '#6366f1',
-        accent: '#FF5733',
-        lines: ['rgba(99, 102, 241, 0.15)', 'rgba(255, 87, 51, 0.1)']
-      }
-    };
-  }, []);
-
-  // Инициализация узлов и обработчиков событий
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const canvasSize = useRef({ width: 0, height: 0 });
+  const rafRef = useRef<number>(0);
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || typeof window === 'undefined') return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      
-      // Пересоздаем узлы при изменении размера
-      initNodes();
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current.x = e.clientX;
-      mouseRef.current.y = e.clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches[0]) {
-        mouseRef.current.x = e.touches[0].clientX;
-        mouseRef.current.y = e.touches[0].clientY;
-      }
-    };
-
-    // Создание узлов
-    const initNodes = () => {
-      nodesRef.current = [];
-      const nodeCount = Math.min(config.nodeCount, Math.floor(window.innerWidth / 30));
-      
-      for (let i = 0; i < nodeCount; i++) {
-        const radius = Math.random() * (config.nodeSize.max - config.nodeSize.min) + config.nodeSize.min;
-        nodesRef.current.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          radius,
-          vx: Math.random() * (config.speed.max - config.speed.min) + config.speed.min * (Math.random() > 0.5 ? 1 : -1),
-          vy: Math.random() * (config.speed.max - config.speed.min) + config.speed.min * (Math.random() > 0.5 ? 1 : -1),
-          color: Math.random() > 0.5 ? config.colors.primary : config.colors.accent,
-        });
-      }
-    };
-
-    // Анимация
-    const animate = () => {
-      requestRef.current = requestAnimationFrame(animate);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Обновление позиций узлов
-      nodesRef.current.forEach(node => {
-        node.x += node.vx;
-        node.y += node.vy;
-        
-        // Отскок от границ
-        if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-        if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
-        
-        // Отталкивание от курсора
-        const dx = mouseRef.current.x - node.x;
-        const dy = mouseRef.current.y - node.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        if (dist < mouseRef.current.radius && dist > 0) {
-          const angle = Math.atan2(dy, dx);
-          const force = (mouseRef.current.radius - dist) / mouseRef.current.radius;
-          
-          node.vx -= Math.cos(angle) * force * 0.02;
-          node.vy -= Math.sin(angle) * force * 0.02;
-        }
-        
-        // Ограничение скорости
-        const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
-        if (speed > config.speed.max) {
-          node.vx = (node.vx / speed) * config.speed.max;
-          node.vy = (node.vy / speed) * config.speed.max;
-        }
-        
-        // Рисование узла
-        ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = node.color;
-        ctx.fill();
-      });
-      
-      // Рисование соединений между узлами
-      for (let i = 0; i < nodesRef.current.length; i++) {
-        for (let j = i + 1; j < nodesRef.current.length; j++) {
-          const dx = nodesRef.current[i].x - nodesRef.current[j].x;
-          const dy = nodesRef.current[i].y - nodesRef.current[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          if (dist < config.connectionDistance) {
-            ctx.beginPath();
-            ctx.moveTo(nodesRef.current[i].x, nodesRef.current[i].y);
-            ctx.lineTo(nodesRef.current[j].x, nodesRef.current[j].y);
-            
-            // Выбор стилей линий в зависимости от цветов узлов
-            const colorIndex = (nodesRef.current[i].color === config.colors.primary && 
-                               nodesRef.current[j].color === config.colors.primary) ? 0 : 1;
-            
-            ctx.strokeStyle = config.colors.lines[colorIndex];
-            ctx.lineWidth = (1 - dist / config.connectionDistance) * 1.5;
-            ctx.stroke();
-          }
-        }
-      }
-    };
-
-    // Инициализация и запуск
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleTouchMove);
+    setMounted(true);
     
-    requestRef.current = requestAnimationFrame(animate);
+    const handleResize = () => {
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        // Устанавливаем размер canvas равным размеру окна с учетом pixel ratio
+        const dpr = window.devicePixelRatio || 1;
+        canvasSize.current.width = window.innerWidth;
+        canvasSize.current.height = window.innerHeight;
+        canvas.width = canvasSize.current.width * dpr;
+        canvas.height = canvasSize.current.height * dpr;
+        canvas.style.width = `${canvasSize.current.width}px`;
+        canvas.style.height = `${canvasSize.current.height}px`;
+        
+        // Инициализируем узлы только при изменении размера
+        initNodes();
+      }
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX, y: e.clientY };
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
+    
+    // Запускаем анимацию
+    initNodes();
+    animate();
     
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
-      if (requestRef.current) {
-        cancelAnimationFrame(requestRef.current);
-      }
+      cancelAnimationFrame(rafRef.current);
     };
-  }, [config]);
-
+  }, []);
+  
+  const initNodes = () => {
+    const { width, height } = canvasSize.current;
+    const nodeCount = Math.floor((width * height) / 15000); // Адаптивное количество узлов
+    
+    nodesRef.current = [];
+    
+    // Создаем узлы
+    for (let i = 0; i < nodeCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 0.5 + 0.2;
+      
+      nodesRef.current.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: Math.random() * 2 + 2,
+        baseRadius: Math.random() * 2 + 2,
+        pulseFactor: Math.random() * 0.5 + 0.5,
+        pulseSpeed: Math.random() * 0.02 + 0.01,
+        pulseOffset: Math.random() * Math.PI * 2,
+        color: getNodeColor(),
+      });
+    }
+  };
+  
+  const getNodeColor = () => {
+    const isDark = mounted && theme === 'dark';
+    
+    if (isDark) {
+      // Темные цвета для темной темы
+      const colors = [
+        'rgba(129, 140, 248, 0.6)', // primary indigo
+        'rgba(79, 70, 229, 0.6)',   // darker indigo
+        'rgba(99, 102, 241, 0.6)',  // mid indigo
+        'rgba(167, 139, 250, 0.6)',  // purplish
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    } else {
+      // Светлые цвета для светлой темы
+      const colors = [
+        'rgba(99, 102, 241, 0.3)',  // primary indigo
+        'rgba(79, 70, 229, 0.3)',   // darker indigo
+        'rgba(129, 140, 248, 0.3)', // light indigo
+        'rgba(147, 51, 234, 0.3)',  // purple
+      ];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+  };
+  
+  const animate = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const { width, height } = canvasSize.current;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Очищаем канвас
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Масштабируем для поддержки Retina дисплеев
+    ctx.scale(dpr, dpr);
+    
+    // Отрисовываем линии и узлы
+    const nodes = nodesRef.current;
+    const mouseRange = 150; // Радиус действия мыши
+    
+    // Отрисовка линий между узлами
+    ctx.globalCompositeOperation = 'lighter';
+    
+    for (let i = 0; i < nodes.length; i++) {
+      const nodeA = nodes[i];
+      
+      // Пульсация размера узла
+      const now = performance.now() / 1000;
+      nodeA.radius = nodeA.baseRadius * (1 + 0.2 * Math.sin(now * nodeA.pulseSpeed + nodeA.pulseOffset));
+      
+      // Обновляем позицию
+      nodeA.x += nodeA.vx;
+      nodeA.y += nodeA.vy;
+      
+      // Отражение от границ экрана
+      if (nodeA.x < 0 || nodeA.x > width) nodeA.vx *= -1;
+      if (nodeA.y < 0 || nodeA.y > height) nodeA.vy *= -1;
+      
+      // Отрисовка линий до других узлов
+      for (let j = i + 1; j < nodes.length; j++) {
+        const nodeB = nodes[j];
+        const dx = nodeB.x - nodeA.x;
+        const dy = nodeB.y - nodeA.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < 150) {
+          // Рисуем линию с прозрачностью зависящей от расстояния
+          ctx.beginPath();
+          ctx.moveTo(nodeA.x, nodeA.y);
+          ctx.lineTo(nodeB.x, nodeB.y);
+          
+          // Градиентная линия между двумя узлами
+          const gradient = ctx.createLinearGradient(nodeA.x, nodeA.y, nodeB.x, nodeB.y);
+          gradient.addColorStop(0, nodeA.color);
+          gradient.addColorStop(1, nodeB.color);
+          
+          ctx.strokeStyle = gradient;
+          ctx.globalAlpha = 1 - (distance / 150);
+          ctx.lineWidth = 1 * (1 - (distance / 150));
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+      
+      // Взаимодействие с курсором
+      const dx = mouseRef.current.x - nodeA.x;
+      const dy = mouseRef.current.y - nodeA.y;
+      const mouseDistance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (mouseDistance < mouseRange) {
+        // Отталкивание от курсора
+        const force = (mouseRange - mouseDistance) / mouseRange;
+        const angle = Math.atan2(dy, dx);
+        
+        nodeA.vx -= Math.cos(angle) * force * 0.2;
+        nodeA.vy -= Math.sin(angle) * force * 0.2;
+        
+        // Ограничение скорости
+        const speed = Math.sqrt(nodeA.vx * nodeA.vx + nodeA.vy * nodeA.vy);
+        if (speed > 3) {
+          nodeA.vx = (nodeA.vx / speed) * 3;
+          nodeA.vy = (nodeA.vy / speed) * 3;
+        }
+      }
+      
+      // Отрисовка узла
+      ctx.beginPath();
+      ctx.arc(nodeA.x, nodeA.y, nodeA.radius, 0, Math.PI * 2);
+      ctx.fillStyle = nodeA.color;
+      ctx.fill();
+    }
+    
+    // Сбрасываем масштаб
+    ctx.scale(1/dpr, 1/dpr);
+    
+    // Продолжаем анимацию
+    rafRef.current = requestAnimationFrame(animate);
+  };
+  
   return (
-    <motion.div 
-      className="fixed inset-0 -z-10 pointer-events-none" 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-    >
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
-        style={{ width: '100%', height: '100%' }}
-      />
-    </motion.div>
+    <canvas 
+      ref={canvasRef}
+      className="fixed top-0 left-0 w-full h-full -z-10"
+      style={{ opacity: 0.8 }}
+    />
   );
 }

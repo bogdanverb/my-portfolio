@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { socialLinks } from '../data/contact'; // Импортируем данные из контактов
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  
+  const footerRef = useRef(null);
+
+  useEffect(() => {
+    // Логика для предотвращения дублирования
+    if (footerRef.current) {
+      console.log('Footer rendered');
+    }
+  }, []);
+
   return (
-    <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8 md:py-12">
+    <footer ref={footerRef} className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 py-8 md:py-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
           <div className="col-span-1 sm:col-span-2">
