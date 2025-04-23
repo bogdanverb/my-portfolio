@@ -63,6 +63,18 @@ export default function MobileMenu({ isOpen, onClose, navItems }: MobileMenuProp
         exit={{ x: "100%" }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       >
+        {/* Кнопка закрытия (хрестик) */}
+        <motion.button 
+          className="absolute top-6 right-6 p-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+          onClick={onClose}
+          whileTap={{ scale: 0.9 }}
+          aria-label="Close menu"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </motion.button>
+
         <div className="pt-20 pb-6 px-6">
           <nav>
             <ul className="space-y-6">

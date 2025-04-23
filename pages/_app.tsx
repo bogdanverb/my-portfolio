@@ -6,7 +6,6 @@ import Preloader from '../components/Preloader';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WebBackground from '../components/WebBackground';
-import CustomCursor from '../components/CustomCursor';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import PageTransition from '../components/PageTransition';
@@ -48,7 +47,6 @@ function MyApp({ Component, pageProps }: AppProps) {
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       {isLoading && <Preloader />}
       <WebBackground />
-      <CustomCursor />
       
       {/* Фиксированные элементы вынесены за пределы AnimatePresence */}
       <Header />
