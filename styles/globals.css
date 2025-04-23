@@ -15,6 +15,7 @@
   --color-border: #e5e7eb;
   --font-family-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --font-family-mono: 'Roboto Mono', monospace;
+  --bg-color-mobile-menu: #ffffff; /* Цвет для светлой темы */
 }
 
 .dark {
@@ -26,6 +27,7 @@
   --color-background: #0a0f1c;
   --color-background-secondary: #1e293b;
   --color-border: #334155;
+  --bg-color-mobile-menu: #111827; /* Цвет для темной темы (gray-900) */
 }
 
 /* your custom styles */
