@@ -7,16 +7,12 @@ Modern portfolio site built with Next.js + TypeScript + Tailwind CSS + Framer Mo
 - **TypeScript**
 - **Tailwind CSS**
 - **Framer Motion**
-- **Netlify CMS** (Git‑based)
-- **Vercel/Netlify/GitHub Pages** (CI/CD, hosting)
+- **Vercel/GitHub Pages**
 
 ## Pages structure
 - `/` — Home
 - `/about` — About
-- `/skills` — Skills
 - `/projects` — Projects
-- `/blog` — Blog/Certificates
-- `/resume` — Resume
 - `/contact` — Contact
 
 ## Installation
@@ -54,20 +50,10 @@ Modern portfolio site built with Next.js + TypeScript + Tailwind CSS + Framer Mo
   - `types/`: Types and interfaces.
   - `config/`: Configuration files.
 
-## CMS
-
-- Content is edited manually via Markdown files in the `content/` folder.
-- No visual admin, all changes via git.
-
-## Sitemap and robots.txt
-
-- Generated automatically via `next-sitemap`.
-
 ## Final UX review
 
 - Check navigation, responsiveness, animations, accessibility.
 - Test with Lighthouse (Ctrl+Shift+I → Lighthouse).
-- Check CMS and contact form.
 
 ## Deploy
 
@@ -92,23 +78,6 @@ Modern portfolio site built with Next.js + TypeScript + Tailwind CSS + Framer Mo
 - `NEXT_PUBLIC_SITE_URL`: Your site's URL (different for each environment)
 - `GITHUB_PAGES`: Set to 'true' when deploying to GitHub Pages
 - `EXPORT`: Set to 'true' when creating static export
-
-## Validation
-
-To ensure your site passes W3C validation:
-
-1. Run build with validation checks:
-   ```
-   npm run build
-   ```
-
-2. Test the built site with the W3C validator:
-   - [HTML Validator](https://validator.w3.org/)
-   - [CSS Validator](https://jigsaw.w3.org/css-validator/)
-
-## Contribution
-
-If you want to contribute, please fork the repo and submit a pull request with your changes.
 
 ## License
 
