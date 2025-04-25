@@ -23,11 +23,11 @@ jobs:
         run: npm ci
         
       - name: Build for GitHub Pages
-        run: npm run build:gh-pages
-        env:
-          GITHUB_PAGES: true
-          EXPORT: true
-          NEXT_PUBLIC_SITE_URL: https://bogdanverb.github.io/my-portfolio
+        run: |
+          export GITHUB_PAGES=true
+          export EXPORT=true
+          export NEXT_PUBLIC_SITE_URL=https://bogdanverb.github.io/my-portfolio
+          npm run build
           
       - name: Add .nojekyll file
         run: touch out/.nojekyll
