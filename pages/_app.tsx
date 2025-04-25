@@ -9,6 +9,7 @@ import WebBackground from '../components/WebBackground';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import PageTransition from '../components/PageTransition';
+import Head from 'next/head';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -42,9 +43,37 @@ function MyApp({ Component, pageProps }: AppProps) {
       router.events.off('routeChangeComplete', handleComplete);
     };
   }, [router]);
+
+  useEffect(() => {
+    // Спеціальний скрипт для GitHub Pages перенаправлень
+    const redirect = sessionStorage.getItem('redirect');
+    if (redirect && redirect !== window.location.href) {
+      sessionStorage.removeItem('redirect');
+      const cleanUrl = redirect.replace(/\/my-portfolio\/?/, '/');
+      router.replace(cleanUrl);
+    }
+  }, [router]);
   
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <Head>
+        {/* Цей скрипт допомагає з перенаправленнями на GitHub Pages */}
+        <script 
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var isGitHubPages = window.location.hostname.includes('github.io');
+                if(isGitHubPages && window.location.pathname === '/my-portfolio/') {
+                  // Ми на корні GitHub Pages - все ок
+                } else if(isGitHubPages && !window.location.pathname.includes('/my-portfolio/')) {
+                  // Додаємо базовий шлях та перенаправляємо
+                  window.location.href = '/my-portfolio' + window.location.pathname;
+                }
+              })();
+            `
+          }}
+        />
+      </Head>
       {isLoading && <Preloader />}
       <WebBackground />
       

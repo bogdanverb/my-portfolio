@@ -1,18 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // swcMinify видалено (застаріла опція)
   
-  // Динамічно визначаємо, чи включати basePath для GitHub Pages
+  // Переконайтесь, що basePath вірний для вашого репозиторію
   basePath: process.env.GITHUB_PAGES === 'true' ? '/my-portfolio' : '',
-  // Для оптимальної роботи статичної експортації
+  
+  // Включіть trailingSlash для кращої підтримки GitHub Pages
   trailingSlash: process.env.GITHUB_PAGES === 'true',
-  // Підтримка експорту для GitHub Pages
+  
+  // Це критично для GitHub Pages
   output: process.env.EXPORT === 'true' ? 'export' : undefined,
-  // Налаштування зображень для статичної експортації
+  
+  // Оптимізація для статичної експортації
   images: {
     unoptimized: process.env.EXPORT === 'true' ? true : false,
-    // domains видалено (застаріла опція)
     remotePatterns: [
       {
         protocol: 'https',

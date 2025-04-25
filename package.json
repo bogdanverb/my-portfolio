@@ -10,10 +10,7 @@
     "lint": "next lint",
     "export": "cross-env EXPORT=true next build",
     "build:gh-pages": "cross-env GITHUB_PAGES=true EXPORT=true next build",
-    "deploy:gh-pages": "npm run build:gh-pages && type nul > out\\.nojekyll && gh-pages -d out -t true",
-    "export:win": "set EXPORT=true && next build",
-    "build:gh-pages:win": "set GITHUB_PAGES=true && set EXPORT=true && next build",
-    "deploy:gh-pages:win": "npm run build:gh-pages:win && type nul > out\\.nojekyll && gh-pages -d out -t true"
+    "deploy:gh-pages": "npm run build:gh-pages && type nul > out\\.nojekyll && xcopy .nojekyll out\\ && gh-pages -d out -t true"
   },
   "dependencies": {
     "@vercel/analytics": "^1.5.0",
