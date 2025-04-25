@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  // swcMinify видалено (застаріла опція)
+  
   // Динамічно визначаємо, чи включати basePath для GitHub Pages
   basePath: process.env.GITHUB_PAGES === 'true' ? '/my-portfolio' : '',
   // Для оптимальної роботи статичної експортації
@@ -11,7 +12,17 @@ const nextConfig = {
   // Налаштування зображень для статичної експортації
   images: {
     unoptimized: process.env.EXPORT === 'true' ? true : false,
-    domains: ['localhost'],
+    // domains видалено (застаріла опція)
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      }
+    ],
   },
   webpack: (config, { isServer }) => {
     // Поліпшення розв'язання модулів для запобігання дублікатів
