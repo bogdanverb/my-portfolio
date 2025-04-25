@@ -2,6 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  // Динамічно визначаємо, чи включати basePath для GitHub Pages
+  basePath: process.env.GITHUB_PAGES === 'true' ? '/my-portfolio' : '',
+  // Для оптимальної роботи статичної експортації
+  trailingSlash: process.env.GITHUB_PAGES === 'true',
+  // Підтримка експорту для GitHub Pages
+  output: process.env.EXPORT === 'true' ? 'export' : undefined,
+  // Налаштування зображень для статичної експортації
+  images: {
+    unoptimized: process.env.EXPORT === 'true' ? true : false,
+    domains: ['localhost'],
+  },
   webpack: (config, { isServer }) => {
     // Поліпшення розв'язання модулів для запобігання дублікатів
     config.optimization.moduleIds = 'deterministic';
